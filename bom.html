@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MUDA - Bill of Materials</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: #f5f5f5;
+            color: #333;
+            min-height: 100vh;
+        }
+        .app-header {
+            background: #FFFFFF;
+            color: #006B54;
+            padding: 16px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .app-header h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #006B54;
+        }
+        .back-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #006B54;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+        }
+        .back-btn svg {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        #user-name-display {
+            font-weight: 600;
+            color: #006B54;
+            margin-left: auto;
+            margin-right: 10px;
+        }
+        .logout-btn {
+            background: none;
+            border: 1px solid #006B54;
+            border-radius: 15px;
+            padding: 8px 12px;
+            color: #006B54;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .logout-btn:hover {
+            background: #006B54;
+            color: white;
+        }
+        .logout-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        .main-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .tab {
+            padding: 10px 20px;
+            border-radius: 15px;
+            background: #f0f0f0;
+            color: #333;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .tab.active {
+            background: #006B54;
+            color: white;
+        }
+        .panel {
+            display: none;
+        }
+        .panel.active {
+            display: block;
+        }
+        .action-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .btn-primary {
+            background: #006B54;
+            color: white;
+            border: 1px solid #006B54;
+            border-radius: 15px;
+            padding: 12px 24px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .btn-primary:hover {
+            background: #005a46;
+        }
+        .btn-secondary {
+            background: #d9d9d9;
+            color: #333;
+            border: 1px solid #d9d9d9;
+            border-radius: 15px;
+            padding: 12px 24px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover {
+            background: #cccccc;
+        }
+        .btn-danger {
+            background: #ff6b6b;
+            color: white;
+            border: 1px solid #ff6b6b;
+            border-radius: 15px;
+            padding: 8px 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-danger:hover {
+            background: #ff5252;
+        }
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .card h2 {
+            color: #006B54;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #333;
+            border-radius: 15px;
+            font-size: 1rem;
+        }
+        .form-control:focus {
+            border-color: #006B54;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0,107,84,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th {
+            background: #006B54;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        tr:hover {
+            background: #f5f5f5;
+        }
+        .action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            margin: 0 2px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+        .action-btn:hover {
+            background: #e0e0e0;
+        }
+        .action-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke: #006B54;
+            stroke-width: 2;
+            fill: none;
+        }
+        .action-btn.delete-btn svg {
+            stroke: #dc3545;
+        }
+        .component-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        .component-row select, .component-row input {
+            flex: 1;
+            min-width: 150px;
+        }
+        .component-row .remove-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #dc3545;
+            font-weight: bold;
+            padding: 0 10px;
+        }
+        .add-component-btn {
+            margin-top: 10px;
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 20px;
+            border-radius: 15px;
+            background: #006B54;
+            color: white;
+            display: none;
+            z-index: 2000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.95);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #006B54;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @media (max-width: 768px) {
+            .component-row {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <button class="back-btn" onclick="window.location.href='index.html'">
+            <svg viewBox="0 0 24 24">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </button>
+        <h1>Bill of Materials (BOM)</h1>
+        <span id="user-name-display"></span>
+        <button class="logout-btn" onclick="logout()">
+            <svg viewBox="0 0 24 24">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+        </button>
+    </header>
+
+    <div class="main-container">
+        <!-- Tab Navigation -->
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('list')">Daftar BOM</div>
+            <div class="tab" onclick="switchTab('form')">Tambah/Edit BOM</div>
+        </div>
+
+        <!-- Panel Daftar BOM -->
+        <div id="panel-list" class="panel active">
+            <div class="action-bar">
+                <button class="btn-primary" onclick="showForm()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="16"/>
+                        <line x1="8" y1="12" x2="16" y2="12"/>
+                    </svg>
+                    BOM Baru
+                </button>
+                <button class="btn-secondary" onclick="loadBOMs()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                        <path d="M3 3v5h5"/>
+                    </svg>
+                    Refresh
+                </button>
+            </div>
+            <div class="card">
+                <h2>Daftar Bill of Materials</h2>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Produk Jadi</th>
+                                <th>Kode Produk</th>
+                                <th>Jumlah Komponen</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bom-table-body">
+                            <tr><td colspan="4" style="text-align:center;">Memuat data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel Form BOM -->
+        <div id="panel-form" class="panel">
+            <div class="card">
+                <h2 id="form-title">Tambah BOM</h2>
+                <form id="bom-form" onsubmit="event.preventDefault();">
+                    <div class="filter-row">
+                        <div class="filter-group" style="flex:2;">
+                            <label>Produk Jadi</label>
+                            <select id="product-id" class="form-control" required>
+                                <option value="">-- Pilih Produk Jadi --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="margin-top:20px;">
+                        <h3>Komponen Penyusun</h3>
+                        <div id="components-container"></div>
+                        <button type="button" class="btn-secondary add-component-btn" onclick="addComponentRow()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="8" x2="12" y2="16"/>
+                                <line x1="8" y1="12" x2="16" y2="12"/>
+                            </svg>
+                            Tambah Komponen
+                        </button>
+                    </div>
+                    <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                        <button type="button" class="btn-secondary" onclick="cancelForm()">Batal</button>
+                        <button type="button" class="btn-primary" onclick="saveBOM()">Simpan BOM</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading & Notifikasi -->
+    <div id="loading" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div style="margin-top:20px; color:#006B54;">Memproses...</div>
+    </div>
+    <div id="notification" class="notification"></div>
+
+    <script>
+        // ==================== GLOBAL VARIABLES ====================
+        const DB_NAME = 'POSKasirDB';
+        const DB_VERSION = 21; // Sesuaikan
+        let db = null;
+        let currentUser = null;
+        let kasirItems = [];
+        let billOfMaterials = [];
+        let currentBOMId = null; // untuk edit
+
+        // ==================== FUNGSI HELPER ====================
+        function showNotification(message, type = 'info') {
+            const notif = document.getElementById('notification');
+            notif.textContent = message;
+            notif.style.backgroundColor = type === 'success' ? '#006B54' : (type === 'error' ? '#dc3545' : '#ffc107');
+            notif.style.display = 'block';
+            setTimeout(() => { notif.style.display = 'none'; }, 3000);
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        // ==================== DATABASE INIT ====================
+        async function initDatabase() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onerror = (e) => reject(e.target.error);
+                request.onsuccess = (e) => {
+                    db = e.target.result;
+                    resolve();
+                };
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('kasirItems')) {
+                        db.createObjectStore('kasirItems', { keyPath: 'id', autoIncrement: true });
+                    }
+                    if (!db.objectStoreNames.contains('bill_of_materials')) {
+                        db.createObjectStore('bill_of_materials', { keyPath: 'id', autoIncrement: true });
+                    }
+                };
+            });
+        }
+
+        // ==================== DATABASE OPERATIONS ====================
+        async function dbGetAll(storeName) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction([storeName], 'readonly');
+                const store = tx.objectStore(storeName);
+                const request = store.getAll();
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function dbGet(storeName, key) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction([storeName], 'readonly');
+                const store = tx.objectStore(storeName);
+                const request = store.get(key);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function dbAdd(storeName, data) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction([storeName], 'readwrite');
+                const store = tx.objectStore(storeName);
+                const request = store.add(data);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function dbPut(storeName, data) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction([storeName], 'readwrite');
+                const store = tx.objectStore(storeName);
+                const request = store.put(data);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function dbDelete(storeName, key) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction([storeName], 'readwrite');
+                const store = tx.objectStore(storeName);
+                const request = store.delete(key);
+                request.onsuccess = () => resolve();
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        // ==================== LOAD DATA ====================
+        async function loadKasirItems() {
+            try {
+                kasirItems = await dbGetAll('kasirItems');
+                renderProductSelect();
+            } catch (error) {
+                console.error('Gagal load items:', error);
+            }
+        }
+
+        async function loadBOMs() {
+            try {
+                billOfMaterials = await dbGetAll('bill_of_materials');
+                renderBOMTable();
+            } catch (error) {
+                console.error('Gagal load BOM:', error);
+            }
+        }
+
+        function renderProductSelect() {
+            const select = document.getElementById('product-id');
+            select.innerHTML = '<option value="">-- Pilih Produk Jadi --</option>';
+            kasirItems.forEach(item => {
+                select.innerHTML += `<option value="${item.id}">${item.name} (${item.code})</option>`;
+            });
+        }
+
+        function renderComponentSelects() {
+            // Untuk setiap dropdown komponen yang sudah ada, isi dengan item
+            const selects = document.querySelectorAll('.component-item-select');
+            selects.forEach(select => {
+                const currentVal = select.value;
+                select.innerHTML = '<option value="">-- Pilih Komponen --</option>';
+                kasirItems.forEach(item => {
+                    select.innerHTML += `<option value="${item.id}" ${item.id == currentVal ? 'selected' : ''}>${item.name} (${item.code})</option>`;
+                });
+            });
+        }
+
+        // ==================== RENDER TABEL BOM ====================
+        function renderBOMTable() {
+            const tbody = document.getElementById('bom-table-body');
+            if (billOfMaterials.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Belum ada BOM</td></tr>';
+                return;
+            }
+            let html = '';
+            billOfMaterials.forEach(bom => {
+                const product = kasirItems.find(i => i.id === bom.productId);
+                html += `
+                    <tr>
+                        <td>${product ? product.name : '-'}</td>
+                        <td>${product ? product.code : '-'}</td>
+                        <td>${bom.components ? bom.components.length : 0}</td>
+                        <td>
+                            <button class="action-btn" onclick="editBOM(${bom.id})" title="Edit">
+                                <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </button>
+                            <button class="action-btn delete-btn" onclick="deleteBOM(${bom.id})" title="Hapus">
+                                <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        // ==================== TAB SWITCHING ====================
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            if (tab === 'list') {
+                document.querySelector('.tab').classList.add('active');
+                document.getElementById('panel-list').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                document.getElementById('panel-form').classList.add('active');
+            }
+        }
+
+        // ==================== FORM BOM ====================
+        function showForm() {
+            currentBOMId = null;
+            document.getElementById('form-title').textContent = 'Tambah BOM';
+            document.getElementById('product-id').value = '';
+            document.getElementById('components-container').innerHTML = '';
+            // Tambah satu baris komponen default
+            addComponentRow();
+            switchTab('form');
+        }
+
+        async function editBOM(id) {
+            const bom = billOfMaterials.find(b => b.id === id);
+            if (!bom) return;
+            currentBOMId = id;
+            document.getElementById('form-title').textContent = 'Edit BOM';
+            document.getElementById('product-id').value = bom.productId;
+
+            // Render komponen
+            const container = document.getElementById('components-container');
+            container.innerHTML = '';
+            if (bom.components && bom.components.length > 0) {
+                bom.components.forEach(comp => {
+                    addComponentRow(comp.itemId, comp.qty, comp.unitConversionId);
+                });
+            } else {
+                addComponentRow();
+            }
+            // Isi dropdown dengan data item (renderComponentSelects akan dipanggil setelah row ditambahkan)
+            renderComponentSelects();
+            switchTab('form');
+        }
+
+        function cancelForm() {
+            switchTab('list');
+        }
+
+        function addComponentRow(itemId = '', qty = 1, unitConversionId = '') {
+            const container = document.getElementById('components-container');
+            const row = document.createElement('div');
+            row.className = 'component-row';
+            row.innerHTML = `
+                <select class="form-control component-item-select" required>
+                    <option value="">-- Pilih Komponen --</option>
+                </select>
+                <input type="number" class="form-control component-qty" placeholder="Jumlah" min="0.01" step="0.01" value="${qty}">
+                <input type="text" class="form-control component-unit" placeholder="Satuan (opsional)" value="${unitConversionId}">
+                <button type="button" class="remove-btn" onclick="this.closest('.component-row').remove()">✖</button>
+            `;
+            container.appendChild(row);
+
+            // Isi dropdown dengan item
+            const select = row.querySelector('.component-item-select');
+            kasirItems.forEach(item => {
+                select.innerHTML += `<option value="${item.id}" ${item.id == itemId ? 'selected' : ''}>${item.name} (${item.code})</option>`;
+            });
+        }
+
+        // ==================== SIMPAN BOM ====================
+        async function saveBOM() {
+            const productId = parseInt(document.getElementById('product-id').value);
+            if (!productId) {
+                showNotification('Pilih produk jadi', 'error');
+                return;
+            }
+
+            const rows = document.querySelectorAll('.component-row');
+            if (rows.length === 0) {
+                showNotification('Minimal satu komponen', 'error');
+                return;
+            }
+
+            const components = [];
+            let valid = true;
+            rows.forEach(row => {
+                const itemId = parseInt(row.querySelector('.component-item-select').value);
+                const qty = parseFloat(row.querySelector('.component-qty').value);
+                if (!itemId || isNaN(qty) || qty <= 0) {
+                    valid = false;
+                    row.style.border = '1px solid red';
+                } else {
+                    row.style.border = '';
+                    components.push({
+                        itemId,
+                        qty,
+                        unitConversionId: row.querySelector('.component-unit').value || null
+                    });
+                }
+            });
+
+            if (!valid) {
+                showNotification('Isi semua komponen dengan benar', 'error');
+                return;
+            }
+
+            const now = new Date().toISOString();
+            const bomData = {
+                productId,
+                components,
+                createdAt: now,
+                updatedAt: now
+            };
+
+            showLoading();
+            try {
+                if (currentBOMId) {
+                    bomData.id = currentBOMId;
+                    await dbPut('bill_of_materials', bomData);
+                } else {
+                    // Cek apakah sudah ada BOM untuk produk ini
+                    const existing = billOfMaterials.find(b => b.productId === productId);
+                    if (existing) {
+                        showNotification('Produk ini sudah memiliki BOM. Edit yang sudah ada.', 'error');
+                        return;
+                    }
+                    await dbAdd('bill_of_materials', bomData);
+                }
+                await loadBOMs();
+                showNotification('BOM berhasil disimpan', 'success');
+                switchTab('list');
+            } catch (error) {
+                console.error(error);
+                showNotification('Gagal menyimpan: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ==================== HAPUS BOM ====================
+        async function deleteBOM(id) {
+            if (!confirm('Hapus BOM ini?')) return;
+            showLoading();
+            try {
+                await dbDelete('bill_of_materials', id);
+                await loadBOMs();
+                showNotification('BOM dihapus', 'success');
+            } catch (error) {
+                showNotification('Gagal hapus: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ==================== SESSION & LOGOUT ====================
+        async function checkSession() {
+            const savedUser = sessionStorage.getItem('currentUser');
+            if (!savedUser) {
+                window.location.href = 'index.html';
+                return false;
+            }
+            try {
+                const parsed = JSON.parse(savedUser);
+                if (parsed.id === 'bypass') {
+                    currentUser = { name: 'Owner' };
+                    document.getElementById('user-name-display').textContent = 'Owner';
+                    return true;
+                }
+                const tx = db.transaction(['users'], 'readonly');
+                const store = tx.objectStore('users');
+                const user = await new Promise((resolve, reject) => {
+                    const req = store.get(parsed.id);
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = reject;
+                });
+                if (user) {
+                    currentUser = user;
+                    document.getElementById('user-name-display').textContent = user.name;
+                    return true;
+                } else {
+                    sessionStorage.removeItem('currentUser');
+                    window.location.href = 'index.html';
+                    return false;
+                }
+            } catch (e) {
+                window.location.href = 'index.html';
+                return false;
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        }
+
+        // ==================== INIT ====================
+        async function init() {
+            showLoading();
+            try {
+                await initDatabase();
+                const sessionOk = await checkSession();
+                if (!sessionOk) return;
+                await loadKasirItems();
+                await loadBOMs();
+            } catch (error) {
+                console.error(error);
+                showNotification('Gagal memuat: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
