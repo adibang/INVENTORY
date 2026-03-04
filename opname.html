@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MUDA - Stok Opname</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: #f5f5f5;
+            color: #333;
+            min-height: 100vh;
+        }
+        .app-header {
+            background: #FFFFFF;
+            color: #006B54;
+            padding: 16px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .app-header h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #006B54;
+        }
+        .back-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #006B54;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+        }
+        .back-btn svg {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        #user-name-display {
+            font-weight: 600;
+            color: #006B54;
+            margin-left: auto;
+            margin-right: 10px;
+        }
+        .logout-btn {
+            background: none;
+            border: 1px solid #006B54;
+            border-radius: 15px;
+            padding: 8px 12px;
+            color: #006B54;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .logout-btn:hover {
+            background: #006B54;
+            color: white;
+        }
+        .logout-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        .main-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        .action-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .btn-primary {
+            background: #006B54;
+            color: white;
+            border: 1px solid #006B54;
+            border-radius: 15px;
+            padding: 12px 24px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .btn-primary:hover {
+            background: #005a46;
+        }
+        .btn-secondary {
+            background: #d9d9d9;
+            color: #333;
+            border: 1px solid #d9d9d9;
+            border-radius: 15px;
+            padding: 12px 24px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover {
+            background: #cccccc;
+        }
+        .btn-danger {
+            background: #ff6b6b;
+            color: white;
+            border: 1px solid #ff6b6b;
+            border-radius: 15px;
+            padding: 8px 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-danger:hover {
+            background: #ff5252;
+        }
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .card h2 {
+            color: #006B54;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #333;
+            border-radius: 15px;
+            font-size: 1rem;
+        }
+        .form-control:focus {
+            border-color: #006B54;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0,107,84,0.1);
+        }
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            margin-bottom: 20px;
+        }
+        .filter-group {
+            flex: 1 1 200px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th {
+            background: #006B54;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        tr:hover {
+            background: #f5f5f5;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-draft {
+            background: #ffc107;
+            color: #333;
+        }
+        .status-completed {
+            background: #28a745;
+            color: white;
+        }
+        .status-cancelled {
+            background: #dc3545;
+            color: white;
+        }
+        .action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            margin: 0 2px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+        .action-btn:hover {
+            background: #e0e0e0;
+        }
+        .action-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke: #006B54;
+            stroke-width: 2;
+            fill: none;
+        }
+        .action-btn.delete-btn svg {
+            stroke: #dc3545;
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            color: #006B54;
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #333;
+        }
+        .table-responsive {
+            overflow-x: auto;
+        }
+        .item-row {
+            background: #f9f9f9;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .batch-list {
+            margin-left: 20px;
+            border-left: 2px solid #006B54;
+            padding-left: 10px;
+        }
+        .batch-item {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 5px;
+            flex-wrap: wrap;
+        }
+        .batch-item input {
+            width: 100px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 20px;
+            border-radius: 15px;
+            background: #006B54;
+            color: white;
+            display: none;
+            z-index: 2000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.95);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #006B54;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @media (max-width: 768px) {
+            .filter-row {
+                flex-direction: column;
+            }
+            th, td {
+                font-size: 0.85rem;
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <button class="back-btn" onclick="window.location.href='index.html'">
+            <svg viewBox="0 0 24 24">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </button>
+        <h1>Stok Opname</h1>
+        <span id="user-name-display"></span>
+        <button class="logout-btn" onclick="logout()">
+            <svg viewBox="0 0 24 24">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+        </button>
+    </header>
+
+    <div class="main-container">
+        <!-- Daftar Stocktake (Opname) -->
+        <div id="stocktake-list" style="display: block;">
+            <div class="action-bar">
+                <button class="btn-primary" onclick="showCreateForm()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="16"/>
+                        <line x1="8" y1="12" x2="16" y2="12"/>
+                    </svg>
+                    Buat Opname Baru
+                </button>
+                <button class="btn-secondary" onclick="loadStocktakes()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                        <path d="M3 3v5h5"/>
+                    </svg>
+                    Refresh
+                </button>
+            </div>
+            <div class="card">
+                <h2>Daftar Opname</h2>
+                <div class="table-responsive">
+                    <table id="stocktake-table">
+                        <thead>
+                            <tr>
+                                <th>No. Opname</th>
+                                <th>Gudang</th>
+                                <th>Tanggal Mulai</th>
+                                <th>Tanggal Selesai</th>
+                                <th>Status</th>
+                                <th>Dibuat Oleh</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stocktake-table-body">
+                            <tr><td colspan="7" style="text-align:center;">Memuat data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Opname (Create/Edit) -->
+        <div id="stocktake-form" style="display: none;">
+            <div class="card">
+                <h2 id="form-title">Buat Opname Baru</h2>
+                <form id="opname-form" onsubmit="event.preventDefault();">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label>Nomor Opname</label>
+                            <input type="text" id="stocktake-number" class="form-control" readonly>
+                        </div>
+                        <div class="filter-group">
+                            <label>Gudang</label>
+                            <select id="warehouse-id" class="form-control" required onchange="loadItemsForOpname()">
+                                <option value="">-- Pilih Gudang --</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Tanggal Mulai</label>
+                            <input type="datetime-local" id="start-date" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label>Catatan</label>
+                            <input type="text" id="notes" class="form-control" placeholder="Opsional">
+                        </div>
+                        <div class="filter-group" style="display: flex; align-items: flex-end; gap: 10px;">
+                            <button type="button" class="btn-secondary" onclick="cancelForm()">Batal</button>
+                            <button type="button" class="btn-primary" onclick="saveStocktake()">Simpan Opname</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card">
+                <h3>Daftar Item</h3>
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <input type="text" id="item-filter" class="form-control" placeholder="Cari item..." oninput="filterItems(this.value)">
+                    </div>
+                </div>
+                <div id="items-container" style="max-height: 500px; overflow-y: auto;">
+                    <!-- Item akan diisi oleh JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Hapus -->
+    <div class="modal-overlay" id="delete-modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>Konfirmasi Hapus</h2>
+                <button class="close-btn" onclick="closeDeleteModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Apakah Anda yakin ingin menghapus opname ini?</p>
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                    <button class="btn-secondary" onclick="closeDeleteModal()">Batal</button>
+                    <button class="btn-danger" id="confirm-delete-btn">Hapus</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading & Notifikasi -->
+    <div id="loading" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div style="margin-top:20px; color:#006B54;">Memproses...</div>
+    </div>
+    <div id="notification" class="notification"></div>
+
+    <script>
+        // ==================== GLOBAL VARIABLES ====================
+        const DB_NAME = 'POSKasirDB';
+        const DB_VERSION = 21; // Sesuaikan dengan versi terbaru
+        let db = null;
+        let currentUser = null;
+        let warehouses = [];
+        let kasirItems = [];
+        let itemStocks = []; // item_stocks per gudang
+        let itemBatches = []; // batches
+        let stocktakes = [];
+        let currentStocktakeId = null; // untuk edit
+        let currentWarehouseId = null;
+        let itemsForOpname = []; // daftar item + batch yang akan ditampilkan
+        let filterText = '';
+
+        // ==================== FUNGSI HELPER ====================
+        function showNotification(message, type = 'info') {
+            const notif = document.getElementById('notification');
+            notif.textContent = message;
+            notif.style.backgroundColor = type === 'success' ? '#006B54' : (type === 'error' ? '#dc3545' : '#ffc107');
+            notif.style.display = 'block';
+            setTimeout(() => { notif.style.display = 'none'; }, 3000);
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function formatRupiah(angka) {
+            return 'Rp ' + angka.toLocaleString('id-ID');
+        }
+
+        function formatDate(dt) {
+            if (!dt) return '-';
+            const d = new Date(dt);
+            return d.toLocaleString('id-ID');
+        }
+
+        // ==================== DATABASE INIT ====================
+        async function initDatabase() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onerror = (e) => reject(e.target.error);
+                request.onsuccess = (e) => {
+                    db = e.target.result;
+                    resolve();
+                };
+                request.onupgradeneeded = (e) => {
+                    // Buat store jika belum ada (untuk jaga-jaga)
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('warehouses')) {
+                        const store = db.createObjectStore('warehouses', { keyPath: 'id', autoIncrement: true });
+                        store.createIndex('code', 'code', { unique: true });
+                    }
+                    if (!db.objectStoreNames.contains('item_stocks')) {
+                        const store = db.createObjectStore('item_stocks', { keyPath: 'id', autoIncrement: true });
+                        store.createIndex('item_warehouse', ['itemId', 'warehouseId'], { unique: true });
+                    }
+                    if (!db.objectStoreNames.contains('item_batches')) {
+                        const store = db.createObjectStore('item_batches', { keyPath: 'id', autoIncrement: true });
+                        store.createIndex('item_warehouse', ['itemId', 'warehouseId']);
+                        store.createIndex('expiry', 'expiryDate');
+                    }
+                    if (!db.objectStoreNames.contains('stocktakes')) {
+                        const store = db.createObjectStore('stocktakes', { keyPath: 'id', autoIncrement: true });
+                        store.createIndex('number', 'stocktakeNumber', { unique: true });
+                    }
+                    if (!db.objectStoreNames.contains('stocktake_items')) {
+                        db.createObjectStore('stocktake_items', { keyPath: 'id', autoIncrement: true });
+                    }
+                    if (!db.objectStoreNames.contains('stock_movements')) {
+                        const store = db.createObjectStore('stock_movements', { keyPath: 'id', autoIncrement: true });
+                        store.createIndex('itemId', 'itemId');
+                        store.createIndex('warehouseId', 'warehouseId');
+                        store.createIndex('reference', ['referenceType', 'referenceId']);
+                    }
+                };
+            });
+        }
+
+        // ==================== DATABASE OPERATIONS ====================
+        async function dbGetAll(storeName) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction([storeName], 'readonly');
+                const store = tx.objectStore(storeName);
+                const request = store.getAll();
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function dbGet(storeName, key) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction([storeName], 'readonly');
+                const store = tx.objectStore(storeName);
+                const request = store.get(key);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function dbAdd(storeName, data) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction([storeName], 'readwrite');
+                const store = tx.objectStore(storeName);
+                const request = store.add(data);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function dbPut(storeName, data) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction([storeName], 'readwrite');
+                const store = tx.objectStore(storeName);
+                const request = store.put(data);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function dbDelete(storeName, key) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction([storeName], 'readwrite');
+                const store = tx.objectStore(storeName);
+                const request = store.delete(key);
+                request.onsuccess = () => resolve();
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        // ==================== LOAD DATA ====================
+        async function loadWarehouses() {
+            try {
+                warehouses = await dbGetAll('warehouses');
+                renderWarehouseSelect();
+            } catch (error) {
+                console.error('Gagal load warehouses:', error);
+            }
+        }
+
+        async function loadKasirItems() {
+            try {
+                kasirItems = await dbGetAll('kasirItems');
+            } catch (error) {
+                console.error('Gagal load items:', error);
+            }
+        }
+
+        async function loadItemStocks() {
+            try {
+                itemStocks = await dbGetAll('item_stocks');
+            } catch (error) {
+                console.error('Gagal load item stocks:', error);
+            }
+        }
+
+        async function loadItemBatches() {
+            try {
+                itemBatches = await dbGetAll('item_batches');
+            } catch (error) {
+                console.error('Gagal load batches:', error);
+            }
+        }
+
+        async function loadStocktakes() {
+            try {
+                stocktakes = await dbGetAll('stocktakes');
+                stocktakes.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+                renderStocktakeTable();
+            } catch (error) {
+                console.error('Gagal load stocktakes:', error);
+            }
+        }
+
+        function renderWarehouseSelect() {
+            const select = document.getElementById('warehouse-id');
+            select.innerHTML = '<option value="">-- Pilih Gudang --</option>';
+            warehouses.forEach(w => {
+                select.innerHTML += `<option value="${w.id}">${w.name} (${w.code})</option>`;
+            });
+        }
+
+        // ==================== RENDER TABEL STOCKTAKE ====================
+        function renderStocktakeTable() {
+            const tbody = document.getElementById('stocktake-table-body');
+            if (stocktakes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Belum ada data opname</td></tr>';
+                return;
+            }
+            let html = '';
+            stocktakes.forEach(st => {
+                const warehouse = warehouses.find(w => w.id === st.warehouseId);
+                const statusClass = st.status === 'completed' ? 'status-completed' : (st.status === 'cancelled' ? 'status-cancelled' : 'status-draft');
+                html += `
+                    <tr>
+                        <td>${st.stocktakeNumber || '-'}</td>
+                        <td>${warehouse ? warehouse.name : '-'}</td>
+                        <td>${formatDate(st.startDate)}</td>
+                        <td>${formatDate(st.endDate)}</td>
+                        <td><span class="status-badge ${statusClass}">${st.status || 'draft'}</span></td>
+                        <td>${st.createdBy ? st.createdBy : '-'}</td>
+                        <td>
+                            ${st.status !== 'completed' ? `
+                                <button class="action-btn" onclick="editStocktake(${st.id})" title="Edit">
+                                    <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                </button>
+                                <button class="action-btn delete-btn" onclick="confirmDeleteStocktake(${st.id})" title="Hapus">
+                                    <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                                </button>
+                            ` : ''}
+                            ${st.status === 'completed' ? `
+                                <button class="action-btn" onclick="viewStocktake(${st.id})" title="Lihat">
+                                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M22 12c-2.667 4.667-6 7-10 7s-7.333-2.333-10-7c2.667-4.667 6-7 10-7s7.333 2.333 10 7z"/></svg>
+                                </button>
+                            ` : ''}
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        // ==================== FORM LOGIC ====================
+        async function showCreateForm() {
+            currentStocktakeId = null;
+            document.getElementById('form-title').textContent = 'Buat Opname Baru';
+            document.getElementById('stocktake-form').style.display = 'block';
+            document.getElementById('stocktake-list').style.display = 'none';
+
+            // Generate nomor opname
+            const number = await generateStocktakeNumber();
+            document.getElementById('stocktake-number').value = number;
+
+            // Set tanggal mulai sekarang
+            const now = new Date();
+            const tzOffset = now.getTimezoneOffset() * 60000;
+            const localISOTime = new Date(now - tzOffset).toISOString().slice(0,16);
+            document.getElementById('start-date').value = localISOTime;
+
+            document.getElementById('warehouse-id').value = '';
+            document.getElementById('notes').value = '';
+
+            // Kosongkan container item
+            document.getElementById('items-container').innerHTML = '';
+            itemsForOpname = [];
+        }
+
+        async function editStocktake(id) {
+            const st = stocktakes.find(s => s.id === id);
+            if (!st) return;
+            currentStocktakeId = id;
+            document.getElementById('form-title').textContent = 'Edit Opname';
+            document.getElementById('stocktake-form').style.display = 'block';
+            document.getElementById('stocktake-list').style.display = 'none';
+
+            document.getElementById('stocktake-number').value = st.stocktakeNumber;
+            document.getElementById('warehouse-id').value = st.warehouseId;
+            document.getElementById('start-date').value = st.startDate.slice(0,16);
+            document.getElementById('notes').value = st.notes || '';
+
+            currentWarehouseId = st.warehouseId;
+
+            // Muat item dan batch untuk gudang tersebut
+            await loadItemsForOpname();
+
+            // Muat data item opname yang sudah ada (jika ada)
+            const tx = db.transaction(['stocktake_items'], 'readonly');
+            const store = tx.objectStore('stocktake_items');
+            const index = store.index('stocktakeId');
+            const range = IDBKeyRange.only(id);
+            const request = index.getAll(range);
+            request.onsuccess = (e) => {
+                const existingItems = e.target.result;
+                // Map existing items to batch level
+                if (existingItems.length > 0) {
+                    // Kita akan mengisi nilai fisik sesuai yang sudah diinput
+                    existingItems.forEach(ei => {
+                        // Cari di itemsForOpname berdasarkan itemId, batchId
+                        for (let group of itemsForOpname) {
+                            if (group.itemId === ei.itemId) {
+                                for (let batch of group.batches) {
+                                    if (batch.batchId === ei.batchId) {
+                                        batch.physicalQty = ei.physicalQty;
+                                        batch.notes = ei.notes;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    renderItemsForOpname();
+                }
+            };
+        }
+
+        function cancelForm() {
+            document.getElementById('stocktake-form').style.display = 'none';
+            document.getElementById('stocktake-list').style.display = 'block';
+            currentStocktakeId = null;
+        }
+
+        async function generateStocktakeNumber() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            const dateStr = `${year}${month}${day}`;
+
+            // Ambil semua stocktake, cari nomor dengan pola yang sama
+            const all = await dbGetAll('stocktakes');
+            const pattern = `OP-${dateStr}-`;
+            const sameDay = all.filter(s => s.stocktakeNumber && s.stocktakeNumber.startsWith(pattern));
+            let counter = sameDay.length + 1;
+            return `${pattern}${String(counter).padStart(4, '0')}`;
+        }
+
+        // ==================== LOAD ITEM & BATCH UNTUK OPNAME ====================
+        async function loadItemsForOpname() {
+            const warehouseId = parseInt(document.getElementById('warehouse-id').value);
+            if (!warehouseId) {
+                document.getElementById('items-container').innerHTML = '<p style="text-align:center; color:#999;">Pilih gudang terlebih dahulu.</p>';
+                return;
+            }
+            currentWarehouseId = warehouseId;
+            showLoading();
+            try {
+                // Ambil semua item_stocks untuk gudang ini
+                const stocks = itemStocks.filter(s => s.warehouseId === warehouseId);
+                // Ambil semua batch untuk gudang ini
+                const batches = itemBatches.filter(b => b.warehouseId === warehouseId);
+
+                // Kelompokkan per item
+                const itemMap = new Map();
+                for (let stock of stocks) {
+                    const item = kasirItems.find(i => i.id === stock.itemId);
+                    if (!item) continue;
+                    // Cari batch untuk item ini
+                    const itemBatchesList = batches.filter(b => b.itemId === stock.itemId);
+                    if (itemBatchesList.length === 0) {
+                        // Jika tidak ada batch, buat batch dummy dengan quantity = stock.quantity
+                        itemBatchesList.push({
+                            id: null,
+                            batchNumber: 'TANPA BATCH',
+                            expiryDate: null,
+                            quantity: stock.quantity,
+                            purchasePrice: item.hargaDasar || 0
+                        });
+                    }
+                    itemMap.set(stock.itemId, {
+                        itemId: stock.itemId,
+                        itemName: item.name,
+                        batches: itemBatchesList.map(b => ({
+                            batchId: b.id,
+                            batchNumber: b.batchNumber,
+                            expiryDate: b.expiryDate,
+                            systemQty: b.quantity,
+                            physicalQty: b.quantity, // default sama dengan sistem
+                            notes: '',
+                            purchasePrice: b.purchasePrice
+                        }))
+                    });
+                }
+
+                // Ubah map ke array
+                itemsForOpname = Array.from(itemMap.values());
+                renderItemsForOpname();
+            } catch (error) {
+                console.error(error);
+                showNotification('Gagal memuat item', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function renderItemsForOpname() {
+            const container = document.getElementById('items-container');
+            if (!itemsForOpname.length) {
+                container.innerHTML = '<p style="text-align:center; color:#999;">Tidak ada item di gudang ini.</p>';
+                return;
+            }
+
+            let html = '';
+            itemsForOpname.forEach((group, idx) => {
+                // Filter berdasarkan teks pencarian
+                if (filterText && !group.itemName.toLowerCase().includes(filterText.toLowerCase())) {
+                    return;
+                }
+                html += `
+                    <div class="item-row" data-item-id="${group.itemId}">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <strong>${group.itemName}</strong>
+                            <span>Stok Sistem: ${group.batches.reduce((sum, b) => sum + b.systemQty, 0)}</span>
+                        </div>
+                        <div class="batch-list">
+                `;
+                group.batches.forEach((batch, bIdx) => {
+                    const expiryText = batch.expiryDate ? ` (Exp: ${new Date(batch.expiryDate).toLocaleDateString('id-ID')})` : '';
+                    html += `
+                        <div class="batch-item" data-batch-id="${batch.batchId || ''}">
+                            <span style="min-width:150px;">Batch: ${batch.batchNumber}${expiryText}</span>
+                            <input type="number" class="physical-qty" value="${batch.physicalQty}" step="any" min="0" data-item-idx="${idx}" data-batch-idx="${bIdx}" onchange="updatePhysicalQty(${idx}, ${bIdx}, this.value)">
+                            <span>Selisih: <span class="diff" id="diff-${idx}-${bIdx}">${(batch.physicalQty - batch.systemQty).toFixed(2)}</span></span>
+                            <input type="text" class="batch-notes" placeholder="Catatan" value="${batch.notes || ''}" onchange="updateBatchNotes(${idx}, ${bIdx}, this.value)">
+                        </div>
+                    `;
+                });
+                html += `
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function filterItems(text) {
+            filterText = text;
+            renderItemsForOpname();
+        }
+
+        function updatePhysicalQty(itemIdx, batchIdx, value) {
+            const qty = parseFloat(value) || 0;
+            itemsForOpname[itemIdx].batches[batchIdx].physicalQty = qty;
+            // Update selisih
+            const diff = qty - itemsForOpname[itemIdx].batches[batchIdx].systemQty;
+            const diffSpan = document.getElementById(`diff-${itemIdx}-${batchIdx}`);
+            if (diffSpan) diffSpan.textContent = diff.toFixed(2);
+        }
+
+        function updateBatchNotes(itemIdx, batchIdx, value) {
+            itemsForOpname[itemIdx].batches[batchIdx].notes = value;
+        }
+
+        // ==================== SIMPAN OPNAME ====================
+        async function saveStocktake() {
+            const warehouseId = parseInt(document.getElementById('warehouse-id').value);
+            if (!warehouseId) {
+                showNotification('Pilih gudang', 'error');
+                return;
+            }
+            const startDate = document.getElementById('start-date').value;
+            if (!startDate) {
+                showNotification('Isi tanggal mulai', 'error');
+                return;
+            }
+            const notes = document.getElementById('notes').value;
+
+            // Validasi: pastikan semua physical qty sudah diisi (tidak perlu)
+            // Kita akan simpan sebagai draft dulu, bisa diubah nanti
+
+            showLoading();
+            try {
+                const now = new Date().toISOString();
+                const stocktakeData = {
+                    stocktakeNumber: document.getElementById('stocktake-number').value,
+                    warehouseId,
+                    startDate,
+                    endDate: null, // akan diisi saat complete
+                    status: 'draft',
+                    createdBy: currentUser ? currentUser.name : 'Admin',
+                    notes,
+                    createdAt: now,
+                    updatedAt: now
+                };
+
+                let stocktakeId;
+                if (currentStocktakeId) {
+                    stocktakeData.id = currentStocktakeId;
+                    await dbPut('stocktakes', stocktakeData);
+                    stocktakeId = currentStocktakeId;
+                } else {
+                    stocktakeId = await dbAdd('stocktakes', stocktakeData);
+                }
+
+                // Hapus semua stocktake_items lama (jika edit)
+                if (currentStocktakeId) {
+                    const tx = db.transaction(['stocktake_items'], 'readwrite');
+                    const store = tx.objectStore('stocktake_items');
+                    const index = store.index('stocktakeId');
+                    const range = IDBKeyRange.only(currentStocktakeId);
+                    const request = index.openCursor();
+                    request.onsuccess = (e) => {
+                        const cursor = e.target.result;
+                        if (cursor) {
+                            store.delete(cursor.primaryKey);
+                            cursor.continue();
+                        }
+                    };
+                }
+
+                // Simpan item opname
+                for (let group of itemsForOpname) {
+                    for (let batch of group.batches) {
+                        if (batch.batchId === null) continue; // batch dummy tidak perlu disimpan
+                        const itemData = {
+                            stocktakeId,
+                            itemId: group.itemId,
+                            batchId: batch.batchId,
+                            systemQty: batch.systemQty,
+                            physicalQty: batch.physicalQty,
+                            unitCost: batch.purchasePrice,
+                            notes: batch.notes
+                        };
+                        await dbAdd('stocktake_items', itemData);
+                    }
+                }
+
+                await loadStocktakes();
+                showNotification('Opname berhasil disimpan sebagai draft', 'success');
+                cancelForm();
+            } catch (error) {
+                console.error(error);
+                showNotification('Gagal menyimpan: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ==================== COMPLETE OPNAME (PROSES ADJUSTMENT) ====================
+        async function completeStocktake(id) {
+            if (!confirm('Setelah diselesaikan, stok akan disesuaikan dan tidak dapat diubah. Lanjutkan?')) return;
+            showLoading();
+            try {
+                const stocktake = stocktakes.find(s => s.id === id);
+                if (!stocktake) return;
+
+                // Ambil semua item opname untuk stocktake ini
+                const tx = db.transaction(['stocktake_items'], 'readonly');
+                const store = tx.objectStore('stocktake_items');
+                const index = store.index('stocktakeId');
+                const range = IDBKeyRange.only(id);
+                const items = await new Promise((resolve, reject) => {
+                    const req = index.getAll(range);
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = reject;
+                });
+
+                // Proses setiap item
+                for (let item of items) {
+                    const diff = item.physicalQty - item.systemQty;
+                    if (diff === 0) continue;
+
+                    // Update batch quantity
+                    const batch = itemBatches.find(b => b.id === item.batchId);
+                    if (batch) {
+                        batch.quantity = item.physicalQty;
+                        batch.updatedAt = new Date().toISOString();
+                        await dbPut('item_batches', batch);
+                    }
+
+                    // Update item_stocks (aggregate)
+                    const stock = itemStocks.find(s => s.itemId === item.itemId && s.warehouseId === stocktake.warehouseId);
+                    if (stock) {
+                        stock.quantity = item.physicalQty; // sebenarnya harus dihitung ulang dari semua batch, tapi kita asumsikan hanya satu batch per item? lebih baik kita hitung ulang dari batch yang sudah diupdate.
+                        // Untuk aman, kita akan hitung ulang total quantity dari semua batch di gudang ini
+                        const allBatches = itemBatches.filter(b => b.itemId === item.itemId && b.warehouseId === stocktake.warehouseId);
+                        const totalQty = allBatches.reduce((sum, b) => sum + b.quantity, 0);
+                        stock.quantity = totalQty;
+                        stock.updatedAt = new Date().toISOString();
+                        await dbPut('item_stocks', stock);
+                    }
+
+                    // Catat stock movement
+                    if (diff !== 0) {
+                        const movement = {
+                            movementType: 'adjustment',
+                            itemId: item.itemId,
+                            warehouseId: stocktake.warehouseId,
+                            quantity: diff,
+                            referenceId: id,
+                            referenceType: 'stocktake',
+                            batchId: item.batchId,
+                            unitCost: item.unitCost,
+                            createdAt: new Date().toISOString(),
+                            createdBy: currentUser ? currentUser.name : 'Admin',
+                            notes: `Opname: selisih ${diff} (fisik ${item.physicalQty}, sistem ${item.systemQty})`
+                        };
+                        await dbAdd('stock_movements', movement);
+                    }
+                }
+
+                // Update status stocktake menjadi completed
+                stocktake.status = 'completed';
+                stocktake.endDate = new Date().toISOString();
+                stocktake.updatedAt = new Date().toISOString();
+                await dbPut('stocktakes', stocktake);
+
+                // Reload data
+                await loadItemBatches();
+                await loadItemStocks();
+                await loadStocktakes();
+
+                showNotification('Opname selesai, stok telah disesuaikan', 'success');
+            } catch (error) {
+                console.error(error);
+                showNotification('Gagal menyelesaikan opname: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ==================== DELETE STOCKTAKE ====================
+        let deleteId = null;
+        function confirmDeleteStocktake(id) {
+            deleteId = id;
+            document.getElementById('delete-modal').style.display = 'flex';
+        }
+        function closeDeleteModal() {
+            document.getElementById('delete-modal').style.display = 'none';
+            deleteId = null;
+        }
+        async function deleteStocktake() {
+            if (!deleteId) return;
+            showLoading();
+            try {
+                // Hapus semua stocktake_items terkait
+                const tx = db.transaction(['stocktake_items'], 'readwrite');
+                const store = tx.objectStore('stocktake_items');
+                const index = store.index('stocktakeId');
+                const range = IDBKeyRange.only(deleteId);
+                const cursorReq = index.openCursor();
+                cursorReq.onsuccess = (e) => {
+                    const cursor = e.target.result;
+                    if (cursor) {
+                        store.delete(cursor.primaryKey);
+                        cursor.continue();
+                    }
+                };
+                // Tunggu selesai
+                await new Promise(resolve => {
+                    tx.oncomplete = resolve;
+                });
+
+                await dbDelete('stocktakes', deleteId);
+                await loadStocktakes();
+                showNotification('Opname dihapus', 'success');
+                closeDeleteModal();
+            } catch (error) {
+                showNotification('Gagal hapus: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+        document.getElementById('confirm-delete-btn').onclick = deleteStocktake;
+
+        // ==================== VIEW STOCKTAKE (READ-ONLY) ====================
+        async function viewStocktake(id) {
+            // Implementasi view detail (bisa diarahkan ke form dengan read-only)
+            alert('Fitur view detail belum diimplementasikan.');
+        }
+
+        // ==================== SESSION & LOGOUT ====================
+        async function checkSession() {
+            const savedUser = sessionStorage.getItem('currentUser');
+            if (!savedUser) {
+                window.location.href = 'index.html';
+                return false;
+            }
+            try {
+                const parsed = JSON.parse(savedUser);
+                if (parsed.id === 'bypass') {
+                    currentUser = { name: 'Owner' };
+                    document.getElementById('user-name-display').textContent = 'Owner';
+                    return true;
+                }
+                const tx = db.transaction(['users'], 'readonly');
+                const store = tx.objectStore('users');
+                const user = await new Promise((resolve, reject) => {
+                    const req = store.get(parsed.id);
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = reject;
+                });
+                if (user) {
+                    currentUser = user;
+                    document.getElementById('user-name-display').textContent = user.name;
+                    return true;
+                } else {
+                    sessionStorage.removeItem('currentUser');
+                    window.location.href = 'index.html';
+                    return false;
+                }
+            } catch (e) {
+                window.location.href = 'index.html';
+                return false;
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        }
+
+        // ==================== INIT ====================
+        async function init() {
+            showLoading();
+            try {
+                await initDatabase();
+                const sessionOk = await checkSession();
+                if (!sessionOk) return;
+                await loadWarehouses();
+                await loadKasirItems();
+                await loadItemStocks();
+                await loadItemBatches();
+                await loadStocktakes();
+
+                // Set default tanggal mulai ke sekarang (untuk form)
+                const now = new Date();
+                const tzOffset = now.getTimezoneOffset() * 60000;
+                const localISOTime = new Date(now - tzOffset).toISOString().slice(0,16);
+                document.getElementById('start-date').value = localISOTime;
+
+                // Tampilkan daftar
+                document.getElementById('stocktake-list').style.display = 'block';
+                document.getElementById('stocktake-form').style.display = 'none';
+            } catch (error) {
+                console.error(error);
+                showNotification('Gagal memuat: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
