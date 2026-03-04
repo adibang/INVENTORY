@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MUDA - Produksi</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: #f5f5f5;
+            color: #333;
+            min-height: 100vh;
+        }
+        .app-header {
+            background: #FFFFFF;
+            color: #006B54;
+            padding: 16px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .app-header h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #006B54;
+        }
+        .back-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #006B54;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+        }
+        .back-btn svg {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        #user-name-display {
+            font-weight: 600;
+            color: #006B54;
+            margin-left: auto;
+            margin-right: 10px;
+        }
+        .logout-btn {
+            background: none;
+            border: 1px solid #006B54;
+            border-radius: 15px;
+            padding: 8px 12px;
+            color: #006B54;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .logout-btn:hover {
+            background: #006B54;
+            color: white;
+        }
+        .logout-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        .main-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .tab {
+            padding: 10px 20px;
+            border-radius: 15px;
+            background: #f0f0f0;
+            color: #333;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .tab.active {
+            background: #006B54;
+            color: white;
+        }
+        .panel {
+            display: none;
+        }
+        .panel.active {
+            display: block;
+        }
+        .action-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .btn-primary {
+            background: #006B54;
+            color: white;
+            border: 1px solid #006B54;
+            border-radius: 15px;
+            padding: 12px 24px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .btn-primary:hover {
+            background: #005a46;
+        }
+        .btn-secondary {
+            background: #d9d9d9;
+            color: #333;
+            border: 1px solid #d9d9d9;
+            border-radius: 15px;
+            padding: 12px 24px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover {
+            background: #cccccc;
+        }
+        .btn-danger {
+            background: #ff6b6b;
+            color: white;
+            border: 1px solid #ff6b6b;
+            border-radius: 15px;
+            padding: 8px 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-danger:hover {
+            background: #ff5252;
+        }
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .card h2 {
+            color: #006B54;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #333;
+            border-radius: 15px;
+            font-size: 1rem;
+        }
+        .form-control:focus {
+            border-color: #006B54;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0,107,84,0.1);
+        }
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            margin-bottom: 20px;
+        }
+        .filter-group {
+            flex: 1 1 200px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th {
+            background: #006B54;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        tr:hover {
+            background: #f5f5f5;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-draft {
+            background: #ffc107;
+            color: #333;
+        }
+        .status-completed {
+            background: #28a745;
+            color: white;
+        }
+        .status-cancelled {
+            background: #dc3545;
+            color: white;
+        }
+        .action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            margin: 0 2px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+        .action-btn:hover {
+            background: #e0e0e0;
+        }
+        .action-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke: #006B54;
+            stroke-width: 2;
+            fill: none;
+        }
+        .action-btn.delete-btn svg {
+            stroke: #dc3545;
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            color: #006B54;
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #333;
+        }
+        .component-list {
+            background: #f9f9f9;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        .component-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        .component-item:last-child {
+            border-bottom: none;
+        }
+        .stock-warning {
+            color: #dc3545;
+            font-weight: 600;
+        }
+        .stock-ok {
+            color: #28a745;
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 20px;
+            border-radius: 15px;
+            background: #006B54;
+            color: white;
+            display: none;
+            z-index: 2000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.95);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #006B54;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @media (max-width: 768px) {
+            .filter-row {
+                flex-direction: column;
+            }
+            th, td {
+                font-size: 0.85rem;
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <button class="back-btn" onclick="window.location.href='index.html'">
+            <svg viewBox="0 0 24 24">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </button>
+        <h1>Produksi (Assembling)</h1>
+        <span id="user-name-display"></span>
+        <button class="logout-btn" onclick="logout()">
+            <svg viewBox="0 0 24 24">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+        </button>
+    </header>
+
+    <div class="main-container">
+        <!-- Tab Navigation -->
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('list')">Daftar Produksi</div>
+            <div class="tab" onclick="switchTab('form')">Buat/Edit Produksi</div>
+        </div>
+
+        <!-- Panel Daftar Produksi -->
+        <div id="panel-list" class="panel active">
+            <div class="action-bar">
+                <button class="btn-primary" onclick="showForm()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="16"/>
+                        <line x1="8" y1="12" x2="16" y2="12"/>
+                    </svg>
+                    Produksi Baru
+                </button>
+                <button class="btn-secondary" onclick="loadProductions()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                        <path d="M3 3v5h5"/>
+                    </svg>
+                    Refresh
+                </button>
+            </div>
+            <div class="card">
+                <h2>Riwayat Produksi</h2>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>No. Produksi</th>
+                                <th>Produk Jadi</th>
+                                <th>Jumlah</th>
+                                <th>Tanggal</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="production-table-body">
+                            <tr><td colspan="6" style="text-align:center;">Memuat data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel Form Produksi -->
+        <div id="panel-form" class="panel">
+            <div class="card">
+                <h2 id="form-title">Produksi Baru</h2>
+                <form id="production-form" onsubmit="event.preventDefault();">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label>Nomor Produksi</label>
+                            <input type="text" id="production-number" class="form-control" readonly>
+                        </div>
+                        <div class="filter-group">
+                            <label>Produk Jadi</label>
+                            <select id="product-id" class="form-control" required onchange="loadBOM(this.value)">
+                                <option value="">-- Pilih Produk Jadi --</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Jumlah Produksi</label>
+                            <input type="number" id="production-qty" class="form-control" min="1" step="1" value="1" required onchange="calculateRequirements()">
+                        </div>
+                        <div class="filter-group">
+                            <label>Tanggal Produksi</label>
+                            <input type="date" id="production-date" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label>Catatan</label>
+                            <input type="text" id="notes" class="form-control" placeholder="Opsional">
+                        </div>
+                        <div class="filter-group" style="display: flex; align-items: flex-end; gap: 10px;">
+                            <button type="button" class="btn-secondary" onclick="cancelForm()">Batal</button>
+                            <button type="button" class="btn-primary" id="save-draft-btn" onclick="saveDraft()">Simpan Draft</button>
+                            <button type="button" class="btn-primary" id="process-btn" onclick="processProduction()">Proses Produksi</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card">
+                <h3>Komponen yang Dibutuhkan</h3>
+                <div id="components-container" class="component-list">
+                    <p style="text-align:center; color:#999;">Pilih produk jadi untuk melihat komponen.</p>
+                </div>
+                <div id="stock-status" style="margin-top:15px; font-weight:600;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Proses -->
+    <div class="modal-overlay" id="confirm-modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>Konfirmasi Proses Produksi</h2>
+                <button class="close-btn" onclick="closeConfirmModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Setelah diproses, stok komponen akan berkurang dan stok produk jadi akan bertambah. Data tidak dapat diubah. Lanjutkan?</p>
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                    <button class="btn-secondary" onclick="closeConfirmModal()">Batal</button>
+                    <button class="btn-primary" id="confirm-process-btn">Proses</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading & Notifikasi -->
+    <div id="loading" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div style="margin-top:20px; color:#006B54;">Memproses...</div>
+    </div>
+    <div id="notification" class="notification"></div>
+
+    <script>
+        // ==================== GLOBAL VARIABLES ====================
+        const DB_NAME = 'POSKasirDB';
+        const DB_VERSION = 21; // Sesuaikan
+        let db = null;
+        let currentUser = null;
+        let kasirItems = [];
+        let itemStocks = []; // item_stocks per gudang (kita asumsikan gudang default id=1)
+        let itemBatches = [];
+        let billOfMaterials = []; // BOM: { id, productId, components: [{ itemId, qty, unitConversionId? }] }
+        let productions = [];
+        let currentProductionId = null; // untuk edit
+        let currentBOM = null; // BOM dari produk yang dipilih
+        let requirements = []; // hasil perhitungan kebutuhan komponen
+
+        // Gudang default (misal id 1). Bisa diambil dari settings atau user.
+        const DEFAULT_WAREHOUSE_ID = 1;
+
+        // ==================== FUNGSI HELPER ====================
+        function showNotification(message, type = 'info') {
+            const notif = document.getElementById('notification');
+            notif.textContent = message;
+            notif.style.backgroundColor = type === 'success' ? '#006B54' : (type === 'error' ? '#dc3545' : '#ffc107');
+            notif.style.display = 'block';
+            setTimeout(() => { notif.style.display = 'none'; }, 3000);
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function formatRupiah(angka) {
+            return 'Rp ' + angka.toLocaleString('id-ID');
+        }
+
+        function formatDate(dt) {
+            if (!dt) return '-';
+            const d = new Date(dt);
+            return d.toLocaleDateString('id-ID');
+        }
+
+        // ==================== DATABASE INIT ====================
+        async function initDatabase() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onerror = (e) => reject(e.target.error);
+                request.onsuccess = (e) => {
+                    db = e.target.result;
+                    resolve();
+                };
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('kasirItems')) {
+                        db.createObjectStore('kasirItems', { keyPath: 'id', autoIncrement: true });
+                    }
+                    if (!db.objectStoreNames.contains('item_stocks')) {
+                        const store = db.createObjectStore('item_stocks', { keyPath: 'id', autoIncrement: true });
+                        store.createIndex('item_warehouse', ['itemId', 'warehouseId'], { unique: true });
+                    }
+                    if (!db.objectStoreNames.contains('item_batches')) {
+                        db.createObjectStore('item_batches', { keyPath: 'id', autoIncrement: true });
+                    }
+                    if (!db.objectStoreNames.contains('bill_of_materials')) {
+                        db.createObjectStore('bill_of_materials', { keyPath: 'id', autoIncrement: true });
+                    }
+                    if (!db.objectStoreNames.contains('productions')) {
+                        const store = db.createObjectStore('productions', { keyPath: 'id', autoIncrement: true });
+                        store.createIndex('number', 'productionNumber', { unique: true });
+                    }
+                    if (!db.objectStoreNames.contains('production_items')) {
+                        db.createObjectStore('production_items', { keyPath: 'id', autoIncrement: true });
+                    }
+                    if (!db.objectStoreNames.contains('stock_movements')) {
+                        const store = db.createObjectStore('stock_movements', { keyPath: 'id', autoIncrement: true });
+                        store.createIndex('reference', ['referenceType', 'referenceId']);
+                    }
+                };
+            });
+        }
+
+        // ==================== DATABASE OPERATIONS ====================
+        async function dbGetAll(storeName) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction([storeName], 'readonly');
+                const store = tx.objectStore(storeName);
+                const request = store.getAll();
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function dbGet(storeName, key) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction([storeName], 'readonly');
+                const store = tx.objectStore(storeName);
+                const request = store.get(key);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function dbAdd(storeName, data) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction([storeName], 'readwrite');
+                const store = tx.objectStore(storeName);
+                const request = store.add(data);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function dbPut(storeName, data) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction([storeName], 'readwrite');
+                const store = tx.objectStore(storeName);
+                const request = store.put(data);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function dbDelete(storeName, key) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction([storeName], 'readwrite');
+                const store = tx.objectStore(storeName);
+                const request = store.delete(key);
+                request.onsuccess = () => resolve();
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        // ==================== LOAD DATA ====================
+        async function loadKasirItems() {
+            try {
+                kasirItems = await dbGetAll('kasirItems');
+                renderProductSelect();
+            } catch (error) {
+                console.error('Gagal load items:', error);
+            }
+        }
+
+        async function loadItemStocks() {
+            try {
+                itemStocks = await dbGetAll('item_stocks');
+            } catch (error) {
+                console.error('Gagal load stocks:', error);
+            }
+        }
+
+        async function loadItemBatches() {
+            try {
+                itemBatches = await dbGetAll('item_batches');
+            } catch (error) {
+                console.error('Gagal load batches:', error);
+            }
+        }
+
+        async function loadBOMs() {
+            try {
+                billOfMaterials = await dbGetAll('bill_of_materials');
+            } catch (error) {
+                console.error('Gagal load BOM:', error);
+            }
+        }
+
+        async function loadProductions() {
+            try {
+                productions = await dbGetAll('productions');
+                productions.sort((a, b) => new Date(b.date) - new Date(a.date));
+                renderProductionTable();
+            } catch (error) {
+                console.error('Gagal load productions:', error);
+            }
+        }
+
+        function renderProductSelect() {
+            const select = document.getElementById('product-id');
+            select.innerHTML = '<option value="">-- Pilih Produk Jadi --</option>';
+            kasirItems.forEach(item => {
+                select.innerHTML += `<option value="${item.id}">${item.name} (${item.code})</option>`;
+            });
+        }
+
+        // ==================== RENDER TABEL PRODUKSI ====================
+        function renderProductionTable() {
+            const tbody = document.getElementById('production-table-body');
+            if (productions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Belum ada data produksi</td></tr>';
+                return;
+            }
+            let html = '';
+            for (let p of productions) {
+                const product = kasirItems.find(i => i.id === p.productId);
+                const statusClass = p.status === 'completed' ? 'status-completed' : (p.status === 'cancelled' ? 'status-cancelled' : 'status-draft');
+                html += `
+                    <tr>
+                        <td>${p.productionNumber || '-'}</td>
+                        <td>${product ? product.name : '-'}</td>
+                        <td>${p.qty}</td>
+                        <td>${formatDate(p.date)}</td>
+                        <td><span class="status-badge ${statusClass}">${p.status || 'draft'}</span></td>
+                        <td>
+                            ${p.status === 'draft' ? `
+                                <button class="action-btn" onclick="editProduction(${p.id})" title="Edit">
+                                    <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                </button>
+                                <button class="action-btn delete-btn" onclick="deleteProduction(${p.id})" title="Hapus">
+                                    <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                                </button>
+                            ` : ''}
+                            ${p.status === 'completed' ? `
+                                <button class="action-btn" onclick="viewProduction(${p.id})" title="Lihat">
+                                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M22 12c-2.667 4.667-6 7-10 7s-7.333-2.333-10-7c2.667-4.667 6-7 10-7s7.333 2.333 10 7z"/></svg>
+                                </button>
+                            ` : ''}
+                        </td>
+                    </tr>
+                `;
+            }
+            tbody.innerHTML = html;
+        }
+
+        // ==================== TAB SWITCHING ====================
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            if (tab === 'list') {
+                document.querySelector('.tab').classList.add('active');
+                document.getElementById('panel-list').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                document.getElementById('panel-form').classList.add('active');
+            }
+        }
+
+        // ==================== FORM PRODUKSI ====================
+        async function showForm() {
+            currentProductionId = null;
+            currentBOM = null;
+            requirements = [];
+            document.getElementById('form-title').textContent = 'Produksi Baru';
+            document.getElementById('production-number').value = await generateProductionNumber();
+            document.getElementById('product-id').value = '';
+            document.getElementById('production-qty').value = '1';
+            document.getElementById('production-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('notes').value = '';
+            document.getElementById('components-container').innerHTML = '<p style="text-align:center; color:#999;">Pilih produk jadi untuk melihat komponen.</p>';
+            document.getElementById('stock-status').innerHTML = '';
+            switchTab('form');
+        }
+
+        async function editProduction(id) {
+            const prod = productions.find(p => p.id === id);
+            if (!prod) return;
+            currentProductionId = id;
+            document.getElementById('form-title').textContent = 'Edit Produksi';
+            document.getElementById('production-number').value = prod.productionNumber;
+            document.getElementById('product-id').value = prod.productId;
+            document.getElementById('production-qty').value = prod.qty;
+            document.getElementById('production-date').value = prod.date.split('T')[0];
+            document.getElementById('notes').value = prod.notes || '';
+
+            // Load BOM untuk produk tersebut
+            await loadBOM(prod.productId);
+
+            // Load production items (untuk ditampilkan sebagai referensi)
+            const tx = db.transaction(['production_items'], 'readonly');
+            const store = tx.objectStore('production_items');
+            const index = store.index('productionId');
+            const range = IDBKeyRange.only(id);
+            const items = await new Promise((resolve, reject) => {
+                const req = index.getAll(range);
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = reject;
+            });
+            if (items.length > 0) {
+                // Tampilkan komponen yang sudah direncanakan (dari draft sebelumnya)
+                // Kita asumsikan BOM bisa berubah, jadi lebih baik tampilkan sesuai BOM saat ini
+                // Tapi untuk konsistensi, kita bisa tampilkan item yang tersimpan
+                // Di sini kita akan tetap hitung ulang kebutuhan berdasarkan BOM dan qty
+                calculateRequirements();
+            } else {
+                calculateRequirements();
+            }
+            switchTab('form');
+        }
+
+        function cancelForm() {
+            switchTab('list');
+        }
+
+        async function generateProductionNumber() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            const dateStr = `${year}${month}${day}`;
+            const all = await dbGetAll('productions');
+            const pattern = `PR-${dateStr}-`;
+            const sameDay = all.filter(p => p.productionNumber && p.productionNumber.startsWith(pattern));
+            let counter = sameDay.length + 1;
+            return `${pattern}${String(counter).padStart(4, '0')}`;
+        }
+
+        // ==================== BOM & KEBUTUHAN ====================
+        async function loadBOM(productId) {
+            if (!productId) {
+                document.getElementById('components-container').innerHTML = '<p style="text-align:center; color:#999;">Pilih produk jadi untuk melihat komponen.</p>';
+                return;
+            }
+            // Cari BOM untuk produk ini (asumsi satu produk punya satu BOM)
+            const bom = billOfMaterials.find(b => b.productId == productId);
+            if (!bom) {
+                document.getElementById('components-container').innerHTML = '<p style="text-align:center; color:#999;">Produk ini belum memiliki Bill of Materials. Silakan buat BOM terlebih dahulu di Master Data.</p>';
+                currentBOM = null;
+                requirements = [];
+                return;
+            }
+            currentBOM = bom;
+            calculateRequirements();
+        }
+
+        function calculateRequirements() {
+            if (!currentBOM) return;
+            const qty = parseFloat(document.getElementById('production-qty').value) || 0;
+            if (qty <= 0) {
+                showNotification('Jumlah produksi harus > 0', 'error');
+                return;
+            }
+
+            // Hitung kebutuhan komponen
+            requirements = currentBOM.components.map(comp => {
+                let needed = comp.qty * qty;
+                // Jika ada konversi satuan, kita perlu menyesuaikan (asumsikan komponen sudah dalam satuan dasar)
+                // Di sini kita sederhanakan dulu
+                return {
+                    itemId: comp.itemId,
+                    qty: needed,
+                    unitConversionId: comp.unitConversionId || null
+                };
+            });
+
+            renderComponents();
+        }
+
+        function renderComponents() {
+            const container = document.getElementById('components-container');
+            if (!requirements.length) {
+                container.innerHTML = '<p style="text-align:center; color:#999;">Tidak ada komponen.</p>';
+                return;
+            }
+
+            let html = '<h4>Kebutuhan Komponen:</h4>';
+            let allStockOK = true;
+            requirements.forEach(req => {
+                const item = kasirItems.find(i => i.id === req.itemId);
+                if (!item) return;
+
+                // Cek stok di gudang default (item_stocks)
+                const stock = itemStocks.find(s => s.itemId === req.itemId && s.warehouseId === DEFAULT_WAREHOUSE_ID);
+                const available = stock ? stock.quantity : 0;
+                const enough = available >= req.qty;
+                if (!enough) allStockOK = false;
+
+                html += `
+                    <div class="component-item">
+                        <span>${item.name}</span>
+                        <span>Kebutuhan: ${req.qty} | Stok: ${available} 
+                            <span class="${enough ? 'stock-ok' : 'stock-warning'}">${enough ? '(Cukup)' : '(Kurang)'}</span>
+                        </span>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            document.getElementById('stock-status').innerHTML = allStockOK 
+                ? '<span style="color:#28a745;">✓ Semua komponen tersedia.</span>' 
+                : '<span style="color:#dc3545;">✗ Stok komponen tidak mencukupi. Proses produksi tidak dapat dilakukan.</span>';
+        }
+
+        // ==================== SIMPAN DRAFT ====================
+        async function saveDraft() {
+            const productId = parseInt(document.getElementById('product-id').value);
+            if (!productId) {
+                showNotification('Pilih produk jadi', 'error');
+                return;
+            }
+            const qty = parseFloat(document.getElementById('production-qty').value);
+            if (qty <= 0) {
+                showNotification('Jumlah harus > 0', 'error');
+                return;
+            }
+            const date = document.getElementById('production-date').value;
+            if (!date) {
+                showNotification('Isi tanggal', 'error');
+                return;
+            }
+
+            showLoading();
+            try {
+                const now = new Date().toISOString();
+                const productionData = {
+                    productionNumber: document.getElementById('production-number').value,
+                    productId,
+                    qty,
+                    date,
+                    notes: document.getElementById('notes').value,
+                    status: 'draft',
+                    createdAt: now,
+                    updatedAt: now
+                };
+
+                let productionId;
+                if (currentProductionId) {
+                    productionData.id = currentProductionId;
+                    await dbPut('productions', productionData);
+                    productionId = currentProductionId;
+
+                    // Hapus production_items lama
+                    const tx = db.transaction(['production_items'], 'readwrite');
+                    const store = tx.objectStore('production_items');
+                    const index = store.index('productionId');
+                    const range = IDBKeyRange.only(currentProductionId);
+                    const cursorReq = index.openCursor();
+                    cursorReq.onsuccess = (e) => {
+                        const cursor = e.target.result;
+                        if (cursor) {
+                            store.delete(cursor.primaryKey);
+                            cursor.continue();
+                        }
+                    };
+                    await new Promise(resolve => tx.oncomplete = resolve);
+                } else {
+                    productionId = await dbAdd('productions', productionData);
+                }
+
+                // Simpan komponen (snapshot dari kebutuhan saat ini)
+                for (let req of requirements) {
+                    const item = kasirItems.find(i => i.id === req.itemId);
+                    const itemData = {
+                        productionId,
+                        itemId: req.itemId,
+                        itemName: item ? item.name : '',
+                        qty: req.qty,
+                        unitConversionId: req.unitConversionId
+                    };
+                    await dbAdd('production_items', itemData);
+                }
+
+                await loadProductions();
+                showNotification('Draft produksi disimpan', 'success');
+                switchTab('list');
+            } catch (error) {
+                console.error(error);
+                showNotification('Gagal menyimpan draft: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ==================== PROSES PRODUKSI ====================
+        function processProduction() {
+            // Cek stok
+            const stockStatus = document.getElementById('stock-status').innerHTML;
+            if (stockStatus.includes('Kurang')) {
+                showNotification('Stok komponen tidak mencukupi', 'error');
+                return;
+            }
+            // Tampilkan konfirmasi
+            document.getElementById('confirm-modal').style.display = 'flex';
+            document.getElementById('confirm-process-btn').onclick = confirmProcess;
+        }
+
+        async function confirmProcess() {
+            closeConfirmModal();
+
+            const productId = parseInt(document.getElementById('product-id').value);
+            const qty = parseFloat(document.getElementById('production-qty').value);
+            const date = document.getElementById('production-date').value;
+            const notes = document.getElementById('notes').value;
+
+            showLoading();
+            try {
+                const now = new Date().toISOString();
+                let productionId;
+
+                if (currentProductionId) {
+                    // Update status produksi yang ada
+                    const prod = productions.find(p => p.id === currentProductionId);
+                    if (prod) {
+                        prod.status = 'completed';
+                        prod.updatedAt = now;
+                        await dbPut('productions', prod);
+                        productionId = currentProductionId;
+                    }
+                } else {
+                    // Buat produksi baru langsung completed
+                    const productionData = {
+                        productionNumber: document.getElementById('production-number').value,
+                        productId,
+                        qty,
+                        date,
+                        notes,
+                        status: 'completed',
+                        createdAt: now,
+                        updatedAt: now
+                    };
+                    productionId = await dbAdd('productions', productionData);
+                }
+
+                // Simpan komponen (snapshot) jika belum ada (untuk kasus langsung proses)
+                // Cek apakah sudah ada production_items
+                const txCheck = db.transaction(['production_items'], 'readonly');
+                const storeCheck = txCheck.objectStore('production_items');
+                const indexCheck = storeCheck.index('productionId');
+                const rangeCheck = IDBKeyRange.only(productionId);
+                const existing = await new Promise((resolve, reject) => {
+                    const req = indexCheck.getAll(rangeCheck);
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = reject;
+                });
+                if (existing.length === 0) {
+                    for (let req of requirements) {
+                        const item = kasirItems.find(i => i.id === req.itemId);
+                        const itemData = {
+                            productionId,
+                            itemId: req.itemId,
+                            itemName: item ? item.name : '',
+                            qty: req.qty,
+                            unitConversionId: req.unitConversionId
+                        };
+                        await dbAdd('production_items', itemData);
+                    }
+                }
+
+                // Proses pengurangan stok komponen
+                for (let req of requirements) {
+                    // Kurangi stok komponen di gudang default (FIFO bisa diimplementasikan di sini)
+                    // Untuk sederhana, kita kurangi dari item_stocks saja
+                    const stock = itemStocks.find(s => s.itemId === req.itemId && s.warehouseId === DEFAULT_WAREHOUSE_ID);
+                    if (stock) {
+                        stock.quantity -= req.qty;
+                        stock.updatedAt = now;
+                        await dbPut('item_stocks', stock);
+                    }
+
+                    // Catat stock movement (keluar)
+                    await dbAdd('stock_movements', {
+                        movementType: 'production_out',
+                        itemId: req.itemId,
+                        warehouseId: DEFAULT_WAREHOUSE_ID,
+                        quantity: -req.qty,
+                        referenceId: productionId,
+                        referenceType: 'production',
+                        unitCost: 0, // bisa diisi dari harga dasar
+                        createdAt: now,
+                        createdBy: currentUser ? currentUser.name : 'Admin',
+                        notes: `Produksi ${document.getElementById('production-number').value}`
+                    });
+                }
+
+                // Tambah stok produk jadi
+                const productStock = itemStocks.find(s => s.itemId === productId && s.warehouseId === DEFAULT_WAREHOUSE_ID);
+                if (productStock) {
+                    productStock.quantity += qty;
+                    productStock.updatedAt = now;
+                    await dbPut('item_stocks', productStock);
+                } else {
+                    // Buat baru
+                    await dbAdd('item_stocks', {
+                        itemId: productId,
+                        warehouseId: DEFAULT_WAREHOUSE_ID,
+                        quantity: qty,
+                        minStock: 0,
+                        reorderPoint: 0,
+                        updatedAt: now
+                    });
+                }
+
+                // Catat stock movement (masuk)
+                await dbAdd('stock_movements', {
+                    movementType: 'production_in',
+                    itemId: productId,
+                    warehouseId: DEFAULT_WAREHOUSE_ID,
+                    quantity: qty,
+                    referenceId: productionId,
+                    referenceType: 'production',
+                    unitCost: 0, // bisa dihitung dari total biaya komponen
+                    createdAt: now,
+                    createdBy: currentUser ? currentUser.name : 'Admin',
+                    notes: `Produksi ${document.getElementById('production-number').value}`
+                });
+
+                // Reload data
+                await loadItemStocks();
+                await loadProductions();
+
+                showNotification('Produksi berhasil diproses', 'success');
+                switchTab('list');
+            } catch (error) {
+                console.error(error);
+                showNotification('Gagal memproses produksi: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirm-modal').style.display = 'none';
+        }
+
+        // ==================== HAPUS PRODUKSI ====================
+        async function deleteProduction(id) {
+            if (!confirm('Hapus produksi ini?')) return;
+            showLoading();
+            try {
+                // Hapus production_items terkait
+                const tx = db.transaction(['production_items'], 'readwrite');
+                const store = tx.objectStore('production_items');
+                const index = store.index('productionId');
+                const range = IDBKeyRange.only(id);
+                const cursorReq = index.openCursor();
+                cursorReq.onsuccess = (e) => {
+                    const cursor = e.target.result;
+                    if (cursor) {
+                        store.delete(cursor.primaryKey);
+                        cursor.continue();
+                    }
+                };
+                await new Promise(resolve => tx.oncomplete = resolve);
+
+                await dbDelete('productions', id);
+                await loadProductions();
+                showNotification('Produksi dihapus', 'success');
+            } catch (error) {
+                showNotification('Gagal hapus: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function viewProduction(id) {
+            // Implementasi view detail (bisa buka modal atau arahkan ke form dengan readonly)
+            alert('Fitur view detail belum diimplementasikan.');
+        }
+
+        // ==================== SESSION & LOGOUT ====================
+        async function checkSession() {
+            const savedUser = sessionStorage.getItem('currentUser');
+            if (!savedUser) {
+                window.location.href = 'index.html';
+                return false;
+            }
+            try {
+                const parsed = JSON.parse(savedUser);
+                if (parsed.id === 'bypass') {
+                    currentUser = { name: 'Owner' };
+                    document.getElementById('user-name-display').textContent = 'Owner';
+                    return true;
+                }
+                const tx = db.transaction(['users'], 'readonly');
+                const store = tx.objectStore('users');
+                const user = await new Promise((resolve, reject) => {
+                    const req = store.get(parsed.id);
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = reject;
+                });
+                if (user) {
+                    currentUser = user;
+                    document.getElementById('user-name-display').textContent = user.name;
+                    return true;
+                } else {
+                    sessionStorage.removeItem('currentUser');
+                    window.location.href = 'index.html';
+                    return false;
+                }
+            } catch (e) {
+                window.location.href = 'index.html';
+                return false;
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        }
+
+        // ==================== INIT ====================
+        async function init() {
+            showLoading();
+            try {
+                await initDatabase();
+                const sessionOk = await checkSession();
+                if (!sessionOk) return;
+                await loadKasirItems();
+                await loadItemStocks();
+                await loadItemBatches();
+                await loadBOMs();
+                await loadProductions();
+
+                // Set default date
+                document.getElementById('production-date').value = new Date().toISOString().split('T')[0];
+            } catch (error) {
+                console.error(error);
+                showNotification('Gagal memuat: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
