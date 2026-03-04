@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MUDA - Manajemen Konsinyasi</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: #f5f5f5;
+            color: #333;
+            min-height: 100vh;
+        }
+        .app-header {
+            background: #FFFFFF;
+            color: #006B54;
+            padding: 16px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .app-header h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #006B54;
+        }
+        .back-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #006B54;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+        }
+        .back-btn svg {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        #user-name-display {
+            font-weight: 600;
+            color: #006B54;
+            margin-left: auto;
+            margin-right: 10px;
+        }
+        .logout-btn {
+            background: none;
+            border: 1px solid #006B54;
+            border-radius: 15px;
+            padding: 8px 12px;
+            color: #006B54;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .logout-btn:hover {
+            background: #006B54;
+            color: white;
+        }
+        .logout-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        .main-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .tab {
+            padding: 10px 20px;
+            border-radius: 15px;
+            background: #f0f0f0;
+            color: #333;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .tab.active {
+            background: #006B54;
+            color: white;
+        }
+        .panel {
+            display: none;
+        }
+        .panel.active {
+            display: block;
+        }
+        .action-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .btn-primary {
+            background: #006B54;
+            color: white;
+            border: 1px solid #006B54;
+            border-radius: 15px;
+            padding: 12px 24px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .btn-primary:hover {
+            background: #005a46;
+        }
+        .btn-secondary {
+            background: #d9d9d9;
+            color: #333;
+            border: 1px solid #d9d9d9;
+            border-radius: 15px;
+            padding: 12px 24px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover {
+            background: #cccccc;
+        }
+        .btn-danger {
+            background: #ff6b6b;
+            color: white;
+            border: 1px solid #ff6b6b;
+            border-radius: 15px;
+            padding: 8px 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-danger:hover {
+            background: #ff5252;
+        }
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .card h2 {
+            color: #006B54;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #333;
+            border-radius: 15px;
+            font-size: 1rem;
+        }
+        .form-control:focus {
+            border-color: #006B54;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0,107,84,0.1);
+        }
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            margin-bottom: 20px;
+        }
+        .filter-group {
+            flex: 1 1 200px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th {
+            background: #006B54;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        tr:hover {
+            background: #f5f5f5;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-active {
+            background: #28a745;
+            color: white;
+        }
+        .status-returned {
+            background: #ffc107;
+            color: #333;
+        }
+        .status-closed {
+            background: #6c757d;
+            color: white;
+        }
+        .action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            margin: 0 2px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+        .action-btn:hover {
+            background: #e0e0e0;
+        }
+        .action-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke: #006B54;
+            stroke-width: 2;
+            fill: none;
+        }
+        .action-btn.delete-btn svg {
+            stroke: #dc3545;
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            color: #006B54;
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #333;
+        }
+        .table-responsive {
+            overflow-x: auto;
+        }
+        .item-row {
+            background: #f9f9f9;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .item-row .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+        .item-details {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .item-details select, .item-details input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            min-width: 150px;
+        }
+        .item-details .qty-input {
+            width: 100px;
+        }
+        .remove-item {
+            color: #dc3545;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 20px;
+            border-radius: 15px;
+            background: #006B54;
+            color: white;
+            display: none;
+            z-index: 2000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.95);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #006B54;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @media (max-width: 768px) {
+            .filter-row {
+                flex-direction: column;
+            }
+            th, td {
+                font-size: 0.85rem;
+                padding: 8px;
+            }
+            .item-details {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <button class="back-btn" onclick="window.location.href='index.html'">
+            <svg viewBox="0 0 24 24">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </button>
+        <h1>Manajemen Konsinyasi</h1>
+        <span id="user-name-display"></span>
+        <button class="logout-btn" onclick="logout()">
+            <svg viewBox="0 0 24 24">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+        </button>
+    </header>
+
+    <div class="main-container">
+        <!-- Tab Navigation -->
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('list')">Daftar Konsinyasi</div>
+            <div class="tab" onclick="switchTab('form')">Buat/Edit Konsinyasi</div>
+        </div>
+
+        <!-- Panel Daftar Konsinyasi -->
+        <div id="panel-list" class="panel active">
+            <div class="action-bar">
+                <button class="btn-primary" onclick="showForm()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="16"/>
+                        <line x1="8" y1="12" x2="16" y2="12"/>
+                    </svg>
+                    Konsinyasi Baru
+                </button>
+                <button class="btn-secondary" onclick="loadConsignments()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                        <path d="M3 3v5h5"/>
+                    </svg>
+                    Refresh
+                </button>
+            </div>
+            <div class="card">
+                <h2>Daftar Konsinyasi</h2>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>No. Konsinyasi</th>
+                                <th>Supplier</th>
+                                <th>Tanggal</th>
+                                <th>Jatuh Tempo</th>
+                                <th>Total Item</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="consignment-table-body">
+                            <tr><td colspan="7" style="text-align:center;">Memuat data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel Form Konsinyasi -->
+        <div id="panel-form" class="panel">
+            <div class="card">
+                <h2 id="form-title">Konsinyasi Baru</h2>
+                <form id="consignment-form" onsubmit="event.preventDefault();">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label>Nomor Konsinyasi</label>
+                            <input type="text" id="consignment-number" class="form-control" readonly>
+                        </div>
+                        <div class="filter-group">
+                            <label>Supplier</label>
+                            <select id="supplier-id" class="form-control" required>
+                                <option value="">-- Pilih Supplier --</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Tanggal</label>
+                            <input type="date" id="consignment-date" class="form-control" required>
+                        </div>
+                        <div class="filter-group">
+                            <label>Jatuh Tempo</label>
+                            <input type="date" id="due-date" class="form-control">
+                        </div>
+                    </div>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label>Catatan</label>
+                            <input type="text" id="notes" class="form-control" placeholder="Opsional">
+                        </div>
+                        <div class="filter-group" style="display: flex; align-items: flex-end; gap: 10px;">
+                            <button type="button" class="btn-secondary" onclick="cancelForm()">Batal</button>
+                            <button type="button" class="btn-primary" onclick="saveConsignment()">Simpan</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3>Item Konsinyasi</h3>
+                    <button class="btn-secondary" onclick="showAddItemModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="16"/>
+                            <line x1="8" y1="12" x2="16" y2="12"/>
+                        </svg>
+                        Tambah Item
+                    </button>
+                </div>
+                <div id="items-container">
+                    <!-- Item akan dirender di sini -->
+                    <p style="text-align:center; color:#999;">Belum ada item. Klik "Tambah Item" untuk menambahkan.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Pilih Item & Batch -->
+    <div class="modal-overlay" id="add-item-modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>Tambah Item Konsinyasi</h2>
+                <button class="close-btn" onclick="closeAddItemModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Pilih Item</label>
+                    <select id="modal-item-select" class="form-control" onchange="loadBatchesForItem(this.value)">
+                        <option value="">-- Pilih Item --</option>
+                    </select>
+                </div>
+                <div class="form-group" id="modal-batch-group" style="display: none;">
+                    <label>Pilih Batch (jika ada)</label>
+                    <select id="modal-batch-select" class="form-control">
+                        <option value="">-- Tanpa Batch --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Jumlah</label>
+                    <input type="number" id="modal-qty" class="form-control" min="0.01" step="0.01" value="1">
+                </div>
+                <div class="form-group">
+                    <label>Harga Satuan (Konsinyasi)</label>
+                    <input type="number" id="modal-price" class="form-control" min="0" step="0.01" value="0">
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                    <button class="btn-secondary" onclick="closeAddItemModal()">Batal</button>
+                    <button class="btn-primary" onclick="addItemToList()">Tambah ke Daftar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading & Notifikasi -->
+    <div id="loading" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div style="margin-top:20px; color:#006B54;">Memproses...</div>
+    </div>
+    <div id="notification" class="notification"></div>
+
+    <script>
+        // ==================== GLOBAL VARIABLES ====================
+        const DB_NAME = 'POSKasirDB';
+        const DB_VERSION = 21; // Sesuaikan dengan versi terbaru
+        let db = null;
+        let currentUser = null;
+        let suppliers = [];
+        let kasirItems = [];
+        let itemBatches = [];
+        let consignments = [];
+        let consignmentItems = []; // untuk form saat ini
+        let currentConsignmentId = null; // untuk edit
+        let editingItemIndex = null; // untuk edit item dalam form
+
+        // ==================== FUNGSI HELPER ====================
+        function showNotification(message, type = 'info') {
+            const notif = document.getElementById('notification');
+            notif.textContent = message;
+            notif.style.backgroundColor = type === 'success' ? '#006B54' : (type === 'error' ? '#dc3545' : '#ffc107');
+            notif.style.display = 'block';
+            setTimeout(() => { notif.style.display = 'none'; }, 3000);
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function formatRupiah(angka) {
+            return 'Rp ' + angka.toLocaleString('id-ID');
+        }
+
+        function formatDate(dt) {
+            if (!dt) return '-';
+            const d = new Date(dt);
+            return d.toLocaleDateString('id-ID');
+        }
+
+        // ==================== DATABASE INIT ====================
+        async function initDatabase() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onerror = (e) => reject(e.target.error);
+                request.onsuccess = (e) => {
+                    db = e.target.result;
+                    resolve();
+                };
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('suppliers')) {
+                        db.createObjectStore('suppliers', { keyPath: 'id', autoIncrement: true });
+                    }
+                    if (!db.objectStoreNames.contains('kasirItems')) {
+                        db.createObjectStore('kasirItems', { keyPath: 'id', autoIncrement: true });
+                    }
+                    if (!db.objectStoreNames.contains('item_batches')) {
+                        const store = db.createObjectStore('item_batches', { keyPath: 'id', autoIncrement: true });
+                        store.createIndex('itemId', 'itemId');
+                    }
+                    if (!db.objectStoreNames.contains('consignments')) {
+                        const store = db.createObjectStore('consignments', { keyPath: 'id', autoIncrement: true });
+                        store.createIndex('number', 'consignmentNumber', { unique: true });
+                    }
+                    if (!db.objectStoreNames.contains('consignment_items')) {
+                        db.createObjectStore('consignment_items', { keyPath: 'id', autoIncrement: true });
+                    }
+                };
+            });
+        }
+
+        // ==================== DATABASE OPERATIONS ====================
+        async function dbGetAll(storeName) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction([storeName], 'readonly');
+                const store = tx.objectStore(storeName);
+                const request = store.getAll();
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function dbGet(storeName, key) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction([storeName], 'readonly');
+                const store = tx.objectStore(storeName);
+                const request = store.get(key);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function dbAdd(storeName, data) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction([storeName], 'readwrite');
+                const store = tx.objectStore(storeName);
+                const request = store.add(data);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function dbPut(storeName, data) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction([storeName], 'readwrite');
+                const store = tx.objectStore(storeName);
+                const request = store.put(data);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function dbDelete(storeName, key) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction([storeName], 'readwrite');
+                const store = tx.objectStore(storeName);
+                const request = store.delete(key);
+                request.onsuccess = () => resolve();
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        // ==================== LOAD DATA ====================
+        async function loadSuppliers() {
+            try {
+                suppliers = await dbGetAll('suppliers');
+                renderSupplierSelect();
+            } catch (error) {
+                console.error('Gagal load suppliers:', error);
+            }
+        }
+
+        async function loadKasirItems() {
+            try {
+                kasirItems = await dbGetAll('kasirItems');
+                renderItemSelect();
+            } catch (error) {
+                console.error('Gagal load items:', error);
+            }
+        }
+
+        async function loadItemBatches() {
+            try {
+                itemBatches = await dbGetAll('item_batches');
+            } catch (error) {
+                console.error('Gagal load batches:', error);
+            }
+        }
+
+        async function loadConsignments() {
+            try {
+                consignments = await dbGetAll('consignments');
+                consignments.sort((a, b) => new Date(b.date) - new Date(a.date));
+                renderConsignmentTable();
+            } catch (error) {
+                console.error('Gagal load consignments:', error);
+            }
+        }
+
+        function renderSupplierSelect() {
+            const select = document.getElementById('supplier-id');
+            select.innerHTML = '<option value="">-- Pilih Supplier --</option>';
+            suppliers.forEach(s => {
+                select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+            });
+        }
+
+        function renderItemSelect() {
+            const select = document.getElementById('modal-item-select');
+            select.innerHTML = '<option value="">-- Pilih Item --</option>';
+            kasirItems.forEach(item => {
+                select.innerHTML += `<option value="${item.id}">${item.name} (${item.code})</option>`;
+            });
+        }
+
+        // ==================== RENDER TABEL KONSINYASI ====================
+        function renderConsignmentTable() {
+            const tbody = document.getElementById('consignment-table-body');
+            if (consignments.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Belum ada data konsinyasi</td></tr>';
+                return;
+            }
+            let html = '';
+            for (let c of consignments) {
+                const supplier = suppliers.find(s => s.id === c.supplierId);
+                const statusClass = c.status === 'active' ? 'status-active' : (c.status === 'returned' ? 'status-returned' : 'status-closed');
+                html += `
+                    <tr>
+                        <td>${c.consignmentNumber || '-'}</td>
+                        <td>${supplier ? supplier.name : '-'}</td>
+                        <td>${formatDate(c.date)}</td>
+                        <td>${formatDate(c.dueDate)}</td>
+                        <td>${c.totalItems || 0}</td>
+                        <td><span class="status-badge ${statusClass}">${c.status || 'active'}</span></td>
+                        <td>
+                            <button class="action-btn" onclick="editConsignment(${c.id})" title="Edit">
+                                <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </button>
+                            <button class="action-btn delete-btn" onclick="deleteConsignment(${c.id})" title="Hapus">
+                                <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }
+            tbody.innerHTML = html;
+        }
+
+        // ==================== TAB SWITCHING ====================
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            if (tab === 'list') {
+                document.querySelector('.tab').classList.add('active');
+                document.getElementById('panel-list').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                document.getElementById('panel-form').classList.add('active');
+            }
+        }
+
+        // ==================== FORM KONSINYASI ====================
+        async function showForm() {
+            currentConsignmentId = null;
+            consignmentItems = [];
+            document.getElementById('form-title').textContent = 'Konsinyasi Baru';
+            document.getElementById('consignment-number').value = await generateConsignmentNumber();
+            document.getElementById('supplier-id').value = '';
+            document.getElementById('consignment-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('due-date').value = '';
+            document.getElementById('notes').value = '';
+            renderItemsContainer();
+            switchTab('form');
+        }
+
+        async function editConsignment(id) {
+            const cons = consignments.find(c => c.id === id);
+            if (!cons) return;
+            currentConsignmentId = id;
+            document.getElementById('form-title').textContent = 'Edit Konsinyasi';
+            document.getElementById('consignment-number').value = cons.consignmentNumber;
+            document.getElementById('supplier-id').value = cons.supplierId;
+            document.getElementById('consignment-date').value = cons.date.split('T')[0];
+            document.getElementById('due-date').value = cons.dueDate ? cons.dueDate.split('T')[0] : '';
+            document.getElementById('notes').value = cons.notes || '';
+
+            // Load consignment items
+            const tx = db.transaction(['consignment_items'], 'readonly');
+            const store = tx.objectStore('consignment_items');
+            const index = store.index('consignmentId');
+            const range = IDBKeyRange.only(id);
+            const items = await new Promise((resolve, reject) => {
+                const req = index.getAll(range);
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = reject;
+            });
+            consignmentItems = items.map(item => ({
+                itemId: item.itemId,
+                batchId: item.batchId,
+                qty: item.qty,
+                price: item.price,
+                itemName: item.itemName,
+                batchNumber: item.batchNumber
+            }));
+            renderItemsContainer();
+            switchTab('form');
+        }
+
+        function cancelForm() {
+            consignmentItems = [];
+            switchTab('list');
+        }
+
+        async function generateConsignmentNumber() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            const dateStr = `${year}${month}${day}`;
+            const all = await dbGetAll('consignments');
+            const pattern = `CN-${dateStr}-`;
+            const sameDay = all.filter(c => c.consignmentNumber && c.consignmentNumber.startsWith(pattern));
+            let counter = sameDay.length + 1;
+            return `${pattern}${String(counter).padStart(4, '0')}`;
+        }
+
+        // ==================== MANAJEMEN ITEM ====================
+        function showAddItemModal() {
+            document.getElementById('modal-item-select').value = '';
+            document.getElementById('modal-batch-group').style.display = 'none';
+            document.getElementById('modal-batch-select').innerHTML = '<option value="">-- Tanpa Batch --</option>';
+            document.getElementById('modal-qty').value = '1';
+            document.getElementById('modal-price').value = '0';
+            editingItemIndex = null;
+            document.getElementById('add-item-modal').style.display = 'flex';
+        }
+
+        function closeAddItemModal() {
+            document.getElementById('add-item-modal').style.display = 'none';
+            editingItemIndex = null;
+        }
+
+        function loadBatchesForItem(itemId) {
+            const batchGroup = document.getElementById('modal-batch-group');
+            const batchSelect = document.getElementById('modal-batch-select');
+            if (!itemId) {
+                batchGroup.style.display = 'none';
+                return;
+            }
+            const batches = itemBatches.filter(b => b.itemId == itemId);
+            if (batches.length === 0) {
+                batchGroup.style.display = 'none';
+                return;
+            }
+            batchGroup.style.display = 'block';
+            batchSelect.innerHTML = '<option value="">-- Tanpa Batch --</option>';
+            batches.forEach(b => {
+                const expiry = b.expiryDate ? ` (Exp: ${new Date(b.expiryDate).toLocaleDateString('id-ID')})` : '';
+                batchSelect.innerHTML += `<option value="${b.id}">${b.batchNumber}${expiry} - Stok: ${b.quantity}</option>`;
+            });
+        }
+
+        function addItemToList() {
+            const itemId = document.getElementById('modal-item-select').value;
+            if (!itemId) {
+                showNotification('Pilih item', 'error');
+                return;
+            }
+            const item = kasirItems.find(i => i.id == itemId);
+            if (!item) return;
+
+            const batchId = document.getElementById('modal-batch-select').value || null;
+            const qty = parseFloat(document.getElementById('modal-qty').value) || 0;
+            const price = parseFloat(document.getElementById('modal-price').value) || 0;
+            if (qty <= 0) {
+                showNotification('Jumlah harus > 0', 'error');
+                return;
+            }
+
+            let batchNumber = null;
+            if (batchId) {
+                const batch = itemBatches.find(b => b.id == batchId);
+                batchNumber = batch ? batch.batchNumber : null;
+            }
+
+            if (editingItemIndex !== null) {
+                // Edit item yang sudah ada
+                consignmentItems[editingItemIndex] = {
+                    itemId: item.id,
+                    itemName: item.name,
+                    batchId,
+                    batchNumber,
+                    qty,
+                    price
+                };
+            } else {
+                consignmentItems.push({
+                    itemId: item.id,
+                    itemName: item.name,
+                    batchId,
+                    batchNumber,
+                    qty,
+                    price
+                });
+            }
+
+            renderItemsContainer();
+            closeAddItemModal();
+        }
+
+        function renderItemsContainer() {
+            const container = document.getElementById('items-container');
+            if (consignmentItems.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#999;">Belum ada item. Klik "Tambah Item" untuk menambahkan.</p>';
+                return;
+            }
+            let html = '';
+            consignmentItems.forEach((item, index) => {
+                html += `
+                    <div class="item-row">
+                        <div class="item-header">
+                            <span>${item.itemName}</span>
+                            <span class="remove-item" onclick="removeItem(${index})">✖</span>
+                        </div>
+                        <div class="item-details">
+                            <span>Batch: ${item.batchNumber || '-'}</span>
+                            <span>Qty: ${item.qty}</span>
+                            <span>Harga: ${formatRupiah(item.price)}</span>
+                            <span>Subtotal: ${formatRupiah(item.qty * item.price)}</span>
+                            <button class="btn-secondary" style="padding:4px 8px;" onclick="editItem(${index})">Edit</button>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function removeItem(index) {
+            consignmentItems.splice(index, 1);
+            renderItemsContainer();
+        }
+
+        function editItem(index) {
+            const item = consignmentItems[index];
+            document.getElementById('modal-item-select').value = item.itemId;
+            loadBatchesForItem(item.itemId);
+            document.getElementById('modal-batch-select').value = item.batchId || '';
+            document.getElementById('modal-qty').value = item.qty;
+            document.getElementById('modal-price').value = item.price;
+            editingItemIndex = index;
+            document.getElementById('add-item-modal').style.display = 'flex';
+        }
+
+        // ==================== SIMPAN KONSINYASI ====================
+        async function saveConsignment() {
+            const supplierId = parseInt(document.getElementById('supplier-id').value);
+            if (!supplierId) {
+                showNotification('Pilih supplier', 'error');
+                return;
+            }
+            const date = document.getElementById('consignment-date').value;
+            if (!date) {
+                showNotification('Isi tanggal', 'error');
+                return;
+            }
+            if (consignmentItems.length === 0) {
+                showNotification('Minimal satu item', 'error');
+                return;
+            }
+
+            const supplier = suppliers.find(s => s.id === supplierId);
+            const now = new Date().toISOString();
+            const consignmentData = {
+                consignmentNumber: document.getElementById('consignment-number').value,
+                supplierId,
+                supplierName: supplier ? supplier.name : '',
+                date,
+                dueDate: document.getElementById('due-date').value || null,
+                notes: document.getElementById('notes').value,
+                totalItems: consignmentItems.length,
+                status: 'active',
+                createdAt: now,
+                updatedAt: now
+            };
+
+            showLoading();
+            try {
+                let consignmentId;
+                if (currentConsignmentId) {
+                    consignmentData.id = currentConsignmentId;
+                    await dbPut('consignments', consignmentData);
+                    consignmentId = currentConsignmentId;
+
+                    // Hapus consignment_items lama
+                    const tx = db.transaction(['consignment_items'], 'readwrite');
+                    const store = tx.objectStore('consignment_items');
+                    const index = store.index('consignmentId');
+                    const range = IDBKeyRange.only(currentConsignmentId);
+                    const cursorReq = index.openCursor();
+                    cursorReq.onsuccess = (e) => {
+                        const cursor = e.target.result;
+                        if (cursor) {
+                            store.delete(cursor.primaryKey);
+                            cursor.continue();
+                        }
+                    };
+                    await new Promise(resolve => tx.oncomplete = resolve);
+                } else {
+                    consignmentId = await dbAdd('consignments', consignmentData);
+                }
+
+                // Simpan item
+                for (let item of consignmentItems) {
+                    const itemData = {
+                        consignmentId,
+                        itemId: item.itemId,
+                        itemName: item.itemName,
+                        batchId: item.batchId,
+                        batchNumber: item.batchNumber,
+                        qty: item.qty,
+                        price: item.price,
+                        soldQty: 0, // nanti di-update saat penjualan
+                        returnedQty: 0
+                    };
+                    await dbAdd('consignment_items', itemData);
+                }
+
+                await loadConsignments();
+                showNotification('Konsinyasi berhasil disimpan', 'success');
+                switchTab('list');
+            } catch (error) {
+                console.error(error);
+                showNotification('Gagal menyimpan: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ==================== HAPUS KONSINYASI ====================
+        async function deleteConsignment(id) {
+            if (!confirm('Hapus konsinyasi ini?')) return;
+            showLoading();
+            try {
+                // Hapus consignment_items terkait
+                const tx = db.transaction(['consignment_items'], 'readwrite');
+                const store = tx.objectStore('consignment_items');
+                const index = store.index('consignmentId');
+                const range = IDBKeyRange.only(id);
+                const cursorReq = index.openCursor();
+                cursorReq.onsuccess = (e) => {
+                    const cursor = e.target.result;
+                    if (cursor) {
+                        store.delete(cursor.primaryKey);
+                        cursor.continue();
+                    }
+                };
+                await new Promise(resolve => tx.oncomplete = resolve);
+
+                await dbDelete('consignments', id);
+                await loadConsignments();
+                showNotification('Konsinyasi dihapus', 'success');
+            } catch (error) {
+                showNotification('Gagal hapus: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ==================== SESSION & LOGOUT ====================
+        async function checkSession() {
+            const savedUser = sessionStorage.getItem('currentUser');
+            if (!savedUser) {
+                window.location.href = 'index.html';
+                return false;
+            }
+            try {
+                const parsed = JSON.parse(savedUser);
+                if (parsed.id === 'bypass') {
+                    currentUser = { name: 'Owner' };
+                    document.getElementById('user-name-display').textContent = 'Owner';
+                    return true;
+                }
+                const tx = db.transaction(['users'], 'readonly');
+                const store = tx.objectStore('users');
+                const user = await new Promise((resolve, reject) => {
+                    const req = store.get(parsed.id);
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = reject;
+                });
+                if (user) {
+                    currentUser = user;
+                    document.getElementById('user-name-display').textContent = user.name;
+                    return true;
+                } else {
+                    sessionStorage.removeItem('currentUser');
+                    window.location.href = 'index.html';
+                    return false;
+                }
+            } catch (e) {
+                window.location.href = 'index.html';
+                return false;
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        }
+
+        // ==================== INIT ====================
+        async function init() {
+            showLoading();
+            try {
+                await initDatabase();
+                const sessionOk = await checkSession();
+                if (!sessionOk) return;
+                await loadSuppliers();
+                await loadKasirItems();
+                await loadItemBatches();
+                await loadConsignments();
+
+                // Set tanggal default di form
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('consignment-date').value = today;
+            } catch (error) {
+                console.error(error);
+                showNotification('Gagal memuat: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
