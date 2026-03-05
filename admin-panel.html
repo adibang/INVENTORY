@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MUDA - Admin Panel</title>
+    <style>
+        /* ==================== RESET & BASE ==================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: #f5f5f5;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        /* ==================== HEADER ==================== */
+        .app-header {
+            background: #FFFFFF;
+            color: #006B54;
+            padding: 16px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .app-header h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #006B54;
+        }
+        .back-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #006B54;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+        }
+        .back-btn svg {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        #user-name-display {
+            font-weight: 600;
+            color: #006B54;
+            margin-left: auto;
+            margin-right: 10px;
+        }
+        .logout-btn {
+            background: none;
+            border: 1px solid #006B54;
+            border-radius: 15px;
+            padding: 8px 12px;
+            color: #006B54;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .logout-btn:hover {
+            background: #006B54;
+            color: white;
+        }
+        .logout-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        /* ==================== MAIN CONTENT ==================== */
+        .main-content {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        /* Tab Navigation */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .tab {
+            padding: 10px 20px;
+            border-radius: 15px;
+            background: #f0f0f0;
+            color: #333;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .tab.active {
+            background: #006B54;
+            color: white;
+        }
+
+        /* Panel */
+        .panel {
+            display: none;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .panel.active {
+            display: block;
+        }
+
+        /* Tabel */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th {
+            background: #006B54;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        /* Tombol */
+        button {
+            border-radius: 15px;
+            padding: 8px 16px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid transparent;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: #006B54;
+            color: white;
+            border: 1px solid #006B54;
+        }
+        .btn-primary:hover {
+            background: #005a46;
+        }
+        .btn-secondary {
+            background: #d9d9d9;
+            color: #333;
+            border: 1px solid #d9d9d9;
+        }
+        .btn-secondary:hover {
+            background: #cccccc;
+        }
+        .btn-danger {
+            background: #ff6b6b;
+            color: white;
+            border: 1px solid #ff6b6b;
+        }
+        .btn-danger:hover {
+            background: #ff5252;
+        }
+        .action-btn {
+            padding: 6px 12px;
+            margin-right: 5px;
+        }
+        .add-btn {
+            margin-bottom: 15px;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            color: #006B54;
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #333;
+            border-radius: 15px;
+            font-size: 1rem;
+        }
+        .checkbox-group {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            padding: 10px;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .checkbox-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        /* Password wrapper dengan icon show/hide */
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .password-wrapper input {
+            width: 100%;
+            padding-right: 40px; /* ruang untuk icon */
+        }
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+        }
+        .toggle-password svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        /* Notifikasi */
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 20px;
+            border-radius: 15px;
+            background: #006B54;
+            color: white;
+            display: none;
+            z-index: 2000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.95);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #006B54;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <button class="back-btn" onclick="window.location.href='index.html'">
+            <svg viewBox="0 0 24 24">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </button>
+        <h1>Admin Panel</h1>
+        <span id="user-name-display"></span>
+        <button class="logout-btn" onclick="logout()">
+            <svg viewBox="0 0 24 24">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+        </button>
+    </header>
+
+    <div class="main-content">
+        <!-- Tab Navigation -->
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('roles')">Role & Permission</div>
+            <div class="tab" onclick="switchTab('users')">Manajemen User</div>
+        </div>
+
+        <!-- Panel Roles -->
+        <div id="panel-roles" class="panel active">
+            <button class="btn-primary add-btn" onclick="openAddRoleModal()">➕ Tambah Role</button>
+            <table id="roles-table">
+                <thead>
+                    <tr>
+                        <th>Nama Role</th>
+                        <th>Permission</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="roles-list">
+                    <tr><td colspan="3">Memuat data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Panel Users -->
+        <div id="panel-users" class="panel">
+            <button class="btn-primary add-btn" onclick="openAddUserModal()">➕ Tambah User</button>
+            <table id="users-table">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Nama</th>
+                        <th>Role</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="users-list">
+                    <tr><td colspan="4">Memuat data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Role -->
+    <div id="role-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="role-modal-title">Tambah Role</h2>
+                <button class="close-btn" onclick="closeRoleModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nama Role</label>
+                    <input type="text" id="role-name" placeholder="Misal: Manager">
+                </div>
+                <div class="form-group">
+                    <label>Permission (centang menu yang dapat diakses)</label>
+                    <div id="permissions-checkboxes" class="checkbox-group"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeRoleModal()">Batal</button>
+                <button class="btn-primary" onclick="saveRole()">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal User (dimodifikasi: tambah confirm password dan icon show/hide) -->
+    <div id="user-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="user-modal-title">Tambah User</h2>
+                <button class="close-btn" onclick="closeUserModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="user-username" placeholder="username">
+                </div>
+
+                <!-- Field Password dengan icon show/hide -->
+                <div class="form-group">
+                    <label>Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="user-password" placeholder="Kosongkan jika tidak diubah">
+                        <button type="button" class="toggle-password" onclick="togglePassword(this)" data-target="user-password">
+                            <!-- Ikon mata terbuka (default) -->
+                            <svg class="eye-icon" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="2"/>
+                                <path d="M22 12c-2.667 4.667-6 7-10 7s-7.333-2.333-10-7c2.667-4.667 6-7 10-7s7.333 2.333 10 7z"/>
+                            </svg>
+                            <!-- Ikon mata tertutup (tersembunyi awalnya) -->
+                            <svg class="eye-off-icon" viewBox="0 0 24 24" style="display:none;">
+                                <line x1="3" y1="3" x2="21" y2="21"/>
+                                <circle cx="12" cy="12" r="2"/>
+                                <path d="M22 12c-2.667 4.667-6 7-10 7s-7.333-2.333-10-7c2.667-4.667 6-7 10-7s7.333 2.333 10 7z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Field Konfirmasi Password dengan icon show/hide -->
+                <div class="form-group">
+                    <label>Konfirmasi Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="user-confirm-password" placeholder="Ulangi password">
+                        <button type="button" class="toggle-password" onclick="togglePassword(this)" data-target="user-confirm-password">
+                            <svg class="eye-icon" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="2"/>
+                                <path d="M22 12c-2.667 4.667-6 7-10 7s-7.333-2.333-10-7c2.667-4.667 6-7 10-7s7.333 2.333 10 7z"/>
+                            </svg>
+                            <svg class="eye-off-icon" viewBox="0 0 24 24" style="display:none;">
+                                <line x1="3" y1="3" x2="21" y2="21"/>
+                                <circle cx="12" cy="12" r="2"/>
+                                <path d="M22 12c-2.667 4.667-6 7-10 7s-7.333-2.333-10-7c2.667-4.667 6-7 10-7s7.333 2.333 10 7z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Nama Lengkap</label>
+                    <input type="text" id="user-name" placeholder="Nama">
+                </div>
+                <div class="form-group">
+                    <label>Role</label>
+                    <select id="user-role"></select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeUserModal()">Batal</button>
+                <button class="btn-primary" onclick="saveUser()">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading & Notifikasi -->
+    <div id="loading" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div style="margin-top:20px; color:#006B54;">Memproses...</div>
+    </div>
+    <div id="notification" class="notification"></div>
+
+    <script>
+        // ==================== KONFIGURASI DATABASE ====================
+        const DB_NAME = 'POSKasirDB';
+        const DB_VERSION = 21; // Sesuaikan dengan versi terbaru di index.html
+        let db = null;
+        let currentUser = null;
+        let roles = [];
+        let users = [];
+        let editingRoleId = null;
+        let editingUserId = null;
+
+        // Daftar semua menu (harus sama dengan di index.html)
+        const ALL_MENUS = [
+            { id: 'menu-master', label: 'Master Data' },
+            { id: 'menu-transaksi', label: 'Transaksi' },
+            { id: 'menu-pembelian', label: 'Pembelian' },
+            { id: 'menu-inventory', label: 'Inventory' },
+            { id: 'menu-cust', label: 'Cust & Supl' },
+            { id: 'menu-laporan', label: 'Laporan' },
+            { id: 'menu-sistem', label: 'Sistem' }
+        ];
+
+        // ==================== FUNGSI HELPER ====================
+        function showNotification(message, type = 'info') {
+            const notif = document.getElementById('notification');
+            notif.textContent = message;
+            notif.style.backgroundColor = type === 'success' ? '#006B54' : (type === 'error' ? '#dc3545' : '#ffc107');
+            notif.style.display = 'block';
+            setTimeout(() => { notif.style.display = 'none'; }, 3000);
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        // ==================== FUNGSI TOGGLE PASSWORD ====================
+        function togglePassword(button) {
+            const targetId = button.getAttribute('data-target');
+            const input = document.getElementById(targetId);
+            if (!input) return;
+            const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+            input.setAttribute('type', type);
+            // Tampilkan/sembunyikan ikon yang sesuai
+            const eyeIcon = button.querySelector('.eye-icon');
+            const eyeOffIcon = button.querySelector('.eye-off-icon');
+            if (eyeIcon && eyeOffIcon) {
+                if (type === 'text') {
+                    eyeIcon.style.display = 'none';
+                    eyeOffIcon.style.display = 'block';
+                } else {
+                    eyeIcon.style.display = 'block';
+                    eyeOffIcon.style.display = 'none';
+                }
+            }
+        }
+
+        // Reset field password ke mode tersembunyi (type=password) dan ikon mata terbuka
+        function resetPasswordFields() {
+            const passwordInput = document.getElementById('user-password');
+            const confirmInput = document.getElementById('user-confirm-password');
+            if (passwordInput) {
+                passwordInput.type = 'password';
+                const btn = document.querySelector('button[data-target="user-password"]');
+                if (btn) {
+                    btn.querySelector('.eye-icon').style.display = 'block';
+                    btn.querySelector('.eye-off-icon').style.display = 'none';
+                }
+            }
+            if (confirmInput) {
+                confirmInput.type = 'password';
+                const btn = document.querySelector('button[data-target="user-confirm-password"]');
+                if (btn) {
+                    btn.querySelector('.eye-icon').style.display = 'block';
+                    btn.querySelector('.eye-off-icon').style.display = 'none';
+                }
+            }
+        }
+
+        // ==================== SESSION CHECK ====================
+        async function checkSession() {
+            const savedUser = sessionStorage.getItem('currentUser');
+            if (!savedUser) {
+                window.location.href = 'index.html';
+                return false;
+            }
+            try {
+                const parsed = JSON.parse(savedUser);
+                if (parsed.id === 'bypass') {
+                    currentUser = { ...parsed, permissions: ALL_MENUS.map(m => m.id) };
+                    document.getElementById('user-name-display').textContent = parsed.name;
+                    return true;
+                }
+                const tx = db.transaction(['users'], 'readonly');
+                const store = tx.objectStore('users');
+                const request = store.get(parsed.id);
+                return new Promise((resolve) => {
+                    request.onsuccess = () => {
+                        const user = request.result;
+                        if (user) {
+                            currentUser = user;
+                            currentUser.permissions = parsed.permissions || [];
+                            document.getElementById('user-name-display').textContent = user.name;
+                            // Pastikan user memiliki akses ke menu master (admin)
+                            if (!currentUser.permissions.includes('menu-master')) {
+                                alert('Anda tidak memiliki akses ke halaman ini.');
+                                window.location.href = 'index.html';
+                                resolve(false);
+                            } else {
+                                resolve(true);
+                            }
+                        } else {
+                            sessionStorage.removeItem('currentUser');
+                            window.location.href = 'index.html';
+                            resolve(false);
+                        }
+                    };
+                    request.onerror = () => {
+                        window.location.href = 'index.html';
+                        resolve(false);
+                    };
+                });
+            } catch (e) {
+                window.location.href = 'index.html';
+                return false;
+            }
+        }
+
+        function logout() {
+            if (confirm('Apakah Anda yakin ingin keluar?')) {
+                sessionStorage.removeItem('currentUser');
+                window.location.href = 'index.html';
+            }
+        }
+
+        // ==================== DATABASE FUNCTIONS ====================
+        async function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => {
+                    db = request.result;
+                    resolve();
+                };
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('roles')) {
+                        const roleStore = db.createObjectStore('roles', { keyPath: 'id', autoIncrement: true });
+                        roleStore.createIndex('name', 'name', { unique: true });
+                    }
+                    if (!db.objectStoreNames.contains('users')) {
+                        const userStore = db.createObjectStore('users', { keyPath: 'id', autoIncrement: true });
+                        userStore.createIndex('username', 'username', { unique: true });
+                    }
+                };
+            });
+        }
+
+        async function dbGetAll(storeName) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction([storeName], 'readonly');
+                const store = tx.objectStore(storeName);
+                const request = store.getAll();
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function dbGet(storeName, key) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction([storeName], 'readonly');
+                const store = tx.objectStore(storeName);
+                const request = store.get(key);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function dbAdd(storeName, data) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction([storeName], 'readwrite');
+                const store = tx.objectStore(storeName);
+                const request = store.add(data);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function dbPut(storeName, data) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction([storeName], 'readwrite');
+                const store = tx.objectStore(storeName);
+                const request = store.put(data);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function dbDelete(storeName, key) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction([storeName], 'readwrite');
+                const store = tx.objectStore(storeName);
+                const request = store.delete(key);
+                request.onsuccess = () => resolve();
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        // ==================== FUNGSI HASH PASSWORD (sama dengan index.html) ====================
+        async function hashPassword(password) {
+            if (window.crypto && window.crypto.subtle) {
+                try {
+                    const encoder = new TextEncoder();
+                    const data = encoder.encode(password);
+                    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                    const hashArray = Array.from(new Uint8Array(hashBuffer));
+                    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                } catch (e) { console.warn('Crypto digest failed, using fallback', e); }
+            }
+            let hash = 0;
+            for (let i = 0; i < password.length; i++) {
+                const char = password.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash |= 0;
+            }
+            return hash.toString(16);
+        }
+
+        // ==================== LOAD DATA ====================
+        async function loadRoles() {
+            roles = await dbGetAll('roles');
+            renderRoles();
+        }
+
+        async function loadUsers() {
+            users = await dbGetAll('users');
+            renderUsers();
+        }
+
+        function renderRoles() {
+            const tbody = document.getElementById('roles-list');
+            if (roles.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Belum ada role</td></tr>';
+                return;
+            }
+            let html = '';
+            roles.forEach(role => {
+                const permLabels = role.permissions.map(permId => {
+                    const menu = ALL_MENUS.find(m => m.id === permId);
+                    return menu ? menu.label : permId;
+                }).join(', ');
+                html += `
+                    <tr>
+                        <td>${role.name}</td>
+                        <td>${permLabels}</td>
+                        <td>
+                            <button class="btn-secondary action-btn" onclick="openEditRoleModal(${role.id})">Edit</button>
+                            ${role.name !== 'Admin' && role.name !== 'Kasir' ? `<button class="btn-danger action-btn" onclick="deleteRole(${role.id})">Hapus</button>` : ''}
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        function renderUsers() {
+            const tbody = document.getElementById('users-list');
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Belum ada user</td></tr>';
+                return;
+            }
+            let html = '';
+            users.forEach(user => {
+                const roleName = roles.find(r => r.id === user.roleId)?.name || '-';
+                html += `
+                    <tr>
+                        <td>${user.username}</td>
+                        <td>${user.name}</td>
+                        <td>${roleName}</td>
+                        <td>
+                            <button class="btn-secondary action-btn" onclick="openEditUserModal(${user.id})">Edit</button>
+                            ${user.roleId ? '<button class="btn-danger action-btn" onclick="deleteUser('+user.id+')">Hapus</button>' : ''}
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        // ==================== TAB SWITCHING ====================
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            if (tab === 'roles') {
+                document.querySelector('.tab').classList.add('active');
+                document.getElementById('panel-roles').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                document.getElementById('panel-users').classList.add('active');
+            }
+        }
+
+        // ==================== ROLE CRUD ====================
+        function openAddRoleModal() {
+            editingRoleId = null;
+            document.getElementById('role-modal-title').textContent = 'Tambah Role';
+            document.getElementById('role-name').value = '';
+            renderPermissionCheckboxes([]);
+            document.getElementById('role-modal').style.display = 'flex';
+        }
+
+        function openEditRoleModal(roleId) {
+            const role = roles.find(r => r.id === roleId);
+            if (!role) return;
+            editingRoleId = roleId;
+            document.getElementById('role-modal-title').textContent = 'Edit Role';
+            document.getElementById('role-name').value = role.name;
+            renderPermissionCheckboxes(role.permissions || []);
+            document.getElementById('role-modal').style.display = 'flex';
+        }
+
+        function renderPermissionCheckboxes(selectedPerms) {
+            const container = document.getElementById('permissions-checkboxes');
+            let html = '';
+            ALL_MENUS.forEach(menu => {
+                const checked = selectedPerms.includes(menu.id) ? 'checked' : '';
+                html += `
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="perm-${menu.id}" value="${menu.id}" ${checked}>
+                        <label for="perm-${menu.id}">${menu.label}</label>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function closeRoleModal() {
+            document.getElementById('role-modal').style.display = 'none';
+            editingRoleId = null;
+        }
+
+        async function saveRole() {
+            const name = document.getElementById('role-name').value.trim();
+            if (!name) {
+                showNotification('Nama role harus diisi', 'error');
+                return;
+            }
+            const checkboxes = document.querySelectorAll('#permissions-checkboxes input[type="checkbox"]');
+            const permissions = [];
+            checkboxes.forEach(cb => {
+                if (cb.checked) permissions.push(cb.value);
+            });
+
+            const now = new Date().toISOString();
+            try {
+                showLoading();
+                if (editingRoleId) {
+                    const role = roles.find(r => r.id === editingRoleId);
+                    if (role) {
+                        // Cek duplikasi nama
+                        const duplicate = roles.find(r => r.id !== editingRoleId && r.name.toLowerCase() === name.toLowerCase());
+                        if (duplicate) {
+                            showNotification('Nama role sudah ada', 'error');
+                            return;
+                        }
+                        role.name = name;
+                        role.permissions = permissions;
+                        role.updatedAt = now;
+                        await dbPut('roles', role);
+                    }
+                } else {
+                    // Cek duplikasi nama
+                    if (roles.some(r => r.name.toLowerCase() === name.toLowerCase())) {
+                        showNotification('Nama role sudah ada', 'error');
+                        return;
+                    }
+                    const newRole = {
+                        name,
+                        permissions,
+                        createdAt: now,
+                        updatedAt: now
+                    };
+                    await dbAdd('roles', newRole);
+                }
+                await loadRoles();
+                closeRoleModal();
+                showNotification('Role berhasil disimpan', 'success');
+            } catch (error) {
+                showNotification('Gagal menyimpan: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function deleteRole(roleId) {
+            if (!confirm('Hapus role ini? User dengan role ini akan kehilangan role (perlu diperbaiki manual).')) return;
+            try {
+                showLoading();
+                // Update user yang menggunakan role ini menjadi null
+                const affectedUsers = users.filter(u => u.roleId === roleId);
+                for (let user of affectedUsers) {
+                    user.roleId = null;
+                    await dbPut('users', user);
+                }
+                await dbDelete('roles', roleId);
+                await loadRoles();
+                await loadUsers();
+                showNotification('Role dihapus', 'success');
+            } catch (error) {
+                showNotification('Gagal hapus: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ==================== USER CRUD ====================
+        function openAddUserModal() {
+            editingUserId = null;
+            document.getElementById('user-modal-title').textContent = 'Tambah User';
+            document.getElementById('user-username').value = '';
+            document.getElementById('user-password').value = '';
+            document.getElementById('user-confirm-password').value = ''; // kosongkan confirm
+            document.getElementById('user-name').value = '';
+            renderRoleSelect(null);
+            // Reset field password ke mode tersembunyi
+            resetPasswordFields();
+            document.getElementById('user-modal').style.display = 'flex';
+        }
+
+        function openEditUserModal(userId) {
+            const user = users.find(u => u.id === userId);
+            if (!user) return;
+            editingUserId = userId;
+            document.getElementById('user-modal-title').textContent = 'Edit User';
+            document.getElementById('user-username').value = user.username;
+            document.getElementById('user-password').value = '';
+            document.getElementById('user-confirm-password').value = ''; // kosongkan confirm
+            document.getElementById('user-name').value = user.name;
+            renderRoleSelect(user.roleId);
+            // Reset field password ke mode tersembunyi
+            resetPasswordFields();
+            document.getElementById('user-modal').style.display = 'flex';
+        }
+
+        function renderRoleSelect(selectedRoleId) {
+            const select = document.getElementById('user-role');
+            select.innerHTML = '<option value="">-- Pilih Role --</option>';
+            roles.forEach(role => {
+                const selected = (role.id === selectedRoleId) ? 'selected' : '';
+                select.innerHTML += `<option value="${role.id}" ${selected}>${role.name}</option>`;
+            });
+        }
+
+        function closeUserModal() {
+            document.getElementById('user-modal').style.display = 'none';
+            editingUserId = null;
+        }
+
+        async function saveUser() {
+            const username = document.getElementById('user-username').value.trim();
+            const password = document.getElementById('user-password').value;
+            const confirmPassword = document.getElementById('user-confirm-password').value;
+            const name = document.getElementById('user-name').value.trim();
+            const roleId = document.getElementById('user-role').value ? parseInt(document.getElementById('user-role').value) : null;
+
+            if (!username || !name) {
+                showNotification('Username dan nama harus diisi', 'error');
+                return;
+            }
+
+            // Validasi password dan konfirmasi
+            if (editingUserId) {
+                // Mode edit: jika password diisi, harus cocok dengan confirm
+                if (password !== '' || confirmPassword !== '') {
+                    if (password !== confirmPassword) {
+                        showNotification('Password dan konfirmasi password tidak cocok', 'error');
+                        return;
+                    }
+                }
+            } else {
+                // Mode tambah: password wajib diisi dan cocok
+                if (!password) {
+                    showNotification('Password harus diisi untuk user baru', 'error');
+                    return;
+                }
+                if (password !== confirmPassword) {
+                    showNotification('Password dan konfirmasi password tidak cocok', 'error');
+                    return;
+                }
+            }
+
+            const now = new Date().toISOString();
+            try {
+                showLoading();
+                if (editingUserId) {
+                    const user = users.find(u => u.id === editingUserId);
+                    if (user) {
+                        // Cek duplikasi username
+                        if (users.some(u => u.id !== editingUserId && u.username === username)) {
+                            showNotification('Username sudah digunakan', 'error');
+                            return;
+                        }
+                        user.username = username;
+                        if (password) {
+                            user.password = await hashPassword(password);
+                        }
+                        user.name = name;
+                        user.roleId = roleId;
+                        user.updatedAt = now;
+                        await dbPut('users', user);
+                    }
+                } else {
+                    if (users.some(u => u.username === username)) {
+                        showNotification('Username sudah digunakan', 'error');
+                        return;
+                    }
+                    const hashed = await hashPassword(password);
+                    const newUser = {
+                        username,
+                        password: hashed,
+                        name,
+                        roleId,
+                        createdAt: now,
+                        updatedAt: now
+                    };
+                    await dbAdd('users', newUser);
+                }
+                await loadUsers();
+                closeUserModal();
+                showNotification('User berhasil disimpan', 'success');
+            } catch (error) {
+                showNotification('Gagal menyimpan: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function deleteUser(userId) {
+            const user = users.find(u => u.id === userId);
+            if (!user) return;
+            // Cegah penghapusan admin terakhir
+            const adminRole = roles.find(r => r.name === 'Admin');
+            if (adminRole && user.roleId === adminRole.id) {
+                const adminCount = users.filter(u => u.roleId === adminRole.id).length;
+                if (adminCount <= 1) {
+                    showNotification('Tidak dapat menghapus admin terakhir', 'error');
+                    return;
+                }
+            }
+            if (!confirm('Hapus user ini?')) return;
+            try {
+                showLoading();
+                await dbDelete('users', userId);
+                await loadUsers();
+                showNotification('User dihapus', 'success');
+            } catch (error) {
+                showNotification('Gagal hapus: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ==================== INISIALISASI ====================
+        async function init() {
+            showLoading();
+            try {
+                await initDB();
+                const sessionOk = await checkSession();
+                if (!sessionOk) return;
+                await loadRoles();
+                await loadUsers();
+            } catch (error) {
+                console.error(error);
+                showNotification('Gagal memuat data: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
