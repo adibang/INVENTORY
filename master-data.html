@@ -12,7 +12,7 @@
             padding: 0;
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
-            user-select: none;
+            /* user-select: none;  -- Dihapus agar teks bisa dipilih */
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
@@ -411,7 +411,7 @@
         }
         .item-info {
             flex: 1;
-            min-width: 0; /* menghindari overflow */
+            min-width: 0;
         }
         .item-name {
             font-weight: 600;
@@ -485,6 +485,16 @@
             border: 1px solid #d9d9d9;
             border-radius: 15px;
             padding: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .conversion-info {
+            flex: 1;
+        }
+        .conversion-actions {
+            display: flex;
+            gap: 5px;
         }
         .conversion-item .action-btn svg {
             width: 16px;
@@ -571,6 +581,19 @@
             z-index: 1001;
             font-size: 14px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        /* Loading spinner */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0,107,84,0.3);
+            border-radius: 50%;
+            border-top-color: #006B54;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -755,15 +778,17 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label>Satuan</label>
-                    <select id="conv-unit" class="form-input"></select>
+                    <select id="conv-unit" class="form-input" required>
+                        <option value="">-- Pilih Satuan --</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>Nilai Satuan (berapa unit dasar per satuan ini)</label>
-                    <input type="number" id="conv-value" class="form-input" min="0.01" step="0.01">
+                    <input type="number" id="conv-value" class="form-input" min="0.01" step="0.01" required>
                 </div>
                 <div class="form-group">
                     <label>Barcode Satuan</label>
-                    <input type="text" id="conv-barcode" class="form-input" required>
+                    <input type="text" id="conv-barcode" class="form-input">
                 </div>
                 <div class="form-group">
                     <label>SKU (Opsional)</label>
@@ -771,11 +796,11 @@
                 </div>
                 <div class="form-group">
                     <label>Harga Dasar</label>
-                    <input type="number" id="conv-base-price" class="form-input" min="0">
+                    <input type="number" id="conv-base-price" class="form-input" min="0" step="0.01">
                 </div>
                 <div class="form-group">
                     <label>Harga Jual</label>
-                    <input type="number" id="conv-sell-price" class="form-input" min="0">
+                    <input type="number" id="conv-sell-price" class="form-input" min="0" step="0.01">
                 </div>
                 <div class="form-group">
                     <label>Poin Pelanggan (Opsional)</label>
@@ -801,7 +826,7 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <input type="text" id="item-search-input" class="form-input" placeholder="Cari nama, kode, atau barcode...">
+                    <input type="text" id="item-search-input" class="form-input" placeholder="Cari nama, kode, atau barcode..." oninput="searchItems()">
                 </div>
                 <div id="item-list-container" class="item-list">
                     <!-- Hasil pencarian akan diisi di sini -->
@@ -835,7 +860,7 @@
     <script>
         // ==================== KONFIGURASI DATABASE ====================
         const DB_NAME = 'POSKasirDB';
-        const DB_VERSION = 21; // Dinaikkan untuk penambahan store dan field
+        const DB_VERSION = 22; // Dinaikkan untuk perbaikan struktur
         const STORES = {
             SETTINGS: 'settings',
             APP_STATE: 'appState',
@@ -880,7 +905,10 @@
         let editingBOMId = null;
 
         let tempUnitConversions = [];
-        let editingConversionIndex = -1;
+        let editingConversionIndex = -1; // -1 berarti tambah baru, >=0 berarti edit
+
+        // Untuk modal pilih item
+        let selectItemCallback = null; // function(item) untuk menerima hasil pilihan
 
         // ==================== FUNGSI DRAWER ====================
         function toggleDrawer() {
@@ -945,7 +973,7 @@
                     const db = e.target.result;
                     const tx = e.target.transaction;
 
-                    // Buat store jika belum ada (sama seperti sebelumnya)
+                    // Buat store jika belum ada
                     if (!db.objectStoreNames.contains(STORES.SETTINGS)) {
                         db.createObjectStore(STORES.SETTINGS, { keyPath: 'key' });
                     }
@@ -957,21 +985,18 @@
                         const itemStore = db.createObjectStore(STORES.KASIR_ITEMS, { keyPath: 'id', autoIncrement: true });
                         itemStore.createIndex('code', 'code', { unique: true });
                     } else {
-                        // Migrasi: tambahkan field track_batch dan track_serial jika belum ada
+                        // Migrasi: tambahkan field baru jika belum ada
                         const itemStore = tx.objectStore(STORES.KASIR_ITEMS);
                         itemStore.openCursor().onsuccess = (ev) => {
                             const cursor = ev.target.result;
                             if (cursor) {
                                 const item = cursor.value;
                                 let updated = false;
-                                if (item.track_batch === undefined) {
-                                    item.track_batch = false;
-                                    updated = true;
-                                }
-                                if (item.track_serial === undefined) {
-                                    item.track_serial = false;
-                                    updated = true;
-                                }
+                                if (item.track_batch === undefined) { item.track_batch = false; updated = true; }
+                                if (item.track_serial === undefined) { item.track_serial = false; updated = true; }
+                                if (item.isWeighable === undefined) { item.isWeighable = false; updated = true; }
+                                if (item.priceLevels === undefined) { item.priceLevels = []; updated = true; }
+                                if (item.unitConversions === undefined) { item.unitConversions = []; updated = true; }
                                 if (updated) {
                                     cursor.update(item);
                                 }
@@ -1094,6 +1119,9 @@
                     if (item.minStock === undefined) item.minStock = 5;
                     if (item.track_batch === undefined) item.track_batch = false;
                     if (item.track_serial === undefined) item.track_serial = false;
+                    if (item.isWeighable === undefined) item.isWeighable = false;
+                    if (item.priceLevels === undefined) item.priceLevels = [];
+                    if (item.unitConversions === undefined) item.unitConversions = [];
                 });
                 kasirItems.sort((a,b) => a.name.localeCompare(b.name));
             } catch (error) {
@@ -1241,7 +1269,7 @@
 
         async function addBOMComponentRow(itemId = '', qty = 1, unitConvId = '') {
             const container = document.getElementById('bom-components-container');
-            const rowIndex = container.children.length;
+            const rowIndex = container.children.length; // Tidak dipakai tapi bisa untuk debugging
             const items = kasirItems;
             let itemOptions = '<option value="">-- Pilih Item --</option>';
             items.forEach(it => {
@@ -1250,11 +1278,11 @@
             const row = document.createElement('div');
             row.className = 'bom-component-row';
             row.innerHTML = `
-                <select class="form-input component-item" style="flex:2;" onchange="updateUnitOptions(this, ${rowIndex})">
+                <select class="form-input component-item" style="flex:2;" onchange="updateUnitOptions(this)">
                     ${itemOptions}
                 </select>
                 <input type="number" class="form-input component-qty" style="flex:1;" value="${qty}" min="0.01" step="0.01">
-                <select class="form-input component-unit" style="flex:1;" data-index="${rowIndex}">
+                <select class="form-input component-unit" style="flex:1;">
                     <option value="">Tanpa Satuan</option>
                 </select>
                 <button type="button" class="level-harga-remove" onclick="this.closest('.bom-component-row').remove()">×</button>
@@ -1266,14 +1294,16 @@
                     const unitSelect = row.querySelector('.component-unit');
                     const satuan = kasirSatuan;
                     item.unitConversions.forEach(conv => {
+                        // Pastikan conv memiliki id unik, jika tidak buat id sementara
+                        const convId = conv.id || `temp-${Math.random()}`;
                         const unitName = satuan.find(s => s.id == conv.unit)?.name || '?';
-                        unitSelect.innerHTML += `<option value="${conv.id}" ${conv.id == unitConvId ? 'selected' : ''}>${unitName} (${conv.value})</option>`;
+                        unitSelect.innerHTML += `<option value="${convId}" ${convId == unitConvId ? 'selected' : ''}>${unitName} (${conv.value})</option>`;
                     });
                 }
             }
         }
 
-        async function updateUnitOptions(select, index) {
+        async function updateUnitOptions(select) {
             const itemId = select.value;
             const row = select.closest('.bom-component-row');
             const unitSelect = row.querySelector('.component-unit');
@@ -1284,8 +1314,9 @@
             if (item && item.unitConversions) {
                 const satuan = kasirSatuan;
                 item.unitConversions.forEach(conv => {
+                    const convId = conv.id || `temp-${Math.random()}`;
                     const unitName = satuan.find(s => s.id == conv.unit)?.name || '?';
-                    unitSelect.innerHTML += `<option value="${conv.id}">${unitName} (${conv.value})</option>`;
+                    unitSelect.innerHTML += `<option value="${convId}">${unitName} (${conv.value})</option>`;
                 });
             }
         }
@@ -1301,7 +1332,7 @@
                     components.push({
                         item_id: parseInt(itemId),
                         quantity: qty,
-                        unit_conversion_id: unitConvId ? parseInt(unitConvId) : null
+                        unit_conversion_id: unitConvId && !unitConvId.startsWith('temp') ? parseInt(unitConvId) : null
                     });
                 }
             });
@@ -1425,9 +1456,73 @@
             document.getElementById('bom-view-modal').style.display = 'none';
         }
 
-        // ==================== FUNGSI ITEM (DIMODIFIKASI) ====================
+        // ==================== FUNGSI ITEM ====================
+        function showItemListPage() {
+            const items = kasirItems;
+            let rows = '';
+            items.forEach(item => {
+                const category = kasirCategories.find(c => c.id === item.categoryId);
+                const catName = category ? category.name : '-';
+                rows += `
+                    <tr>
+                        <td>${item.code}</td>
+                        <td>${item.name}</td>
+                        <td>${catName}</td>
+                        <td>${formatRupiah(item.hargaJual || 0)}</td>
+                        <td>${item.stock || 0}</td>
+                        <td>
+                            <button class="action-btn edit-btn" onclick="navigateTo('editItem', ${item.id})">✏️</button>
+                            <button class="action-btn delete-btn" onclick="deleteItemPrompt(${item.id})">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            const html = `
+                <div class="content-card">
+                    <h2 class="page-title">
+                        Daftar Item
+                        <button class="form-button-primary" style="margin-left:auto;" onclick="navigateTo('addItem')">+ Tambah Item</button>
+                    </h2>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Kode</th>
+                                    <th>Nama</th>
+                                    <th>Kategori</th>
+                                    <th>Harga Jual</th>
+                                    <th>Stok</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rows || '<tr><td colspan="6" style="text-align:center;">Belum ada item</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            document.getElementById('master-content').innerHTML = html;
+        }
+
+        async function deleteItemPrompt(id) {
+            if (confirm('Hapus item ini? Semua data terkait (stok, batch, dll) akan ikut terhapus.')) {
+                try {
+                    // Periksa apakah item digunakan di BOM atau bundle?
+                    // Untuk sederhana, langsung hapus
+                    await dbDelete(STORES.KASIR_ITEMS, id);
+                    await loadKasirItems();
+                    showNotification('Item dihapus', 'success');
+                    showItemListPage();
+                } catch (error) {
+                    showNotification('Gagal hapus: ' + error.message, 'error');
+                }
+            }
+        }
+
         function showAddItemPage() {
             editingItemId = null;
+            tempUnitConversions = [];
             const html = `
                 <div class="content-card">
                     <h2 class="page-title">
@@ -1475,7 +1570,7 @@
                                 <input type="number" id="kasir-item-berat" class="form-input" min="0" step="0.01">
                             </div>
                             <div class="form-group">
-                                <label>Satuan</label>
+                                <label>Satuan Dasar</label>
                                 <select id="kasir-item-satuan" class="form-input">
                                     <option value="">-- Pilih Satuan --</option>
                                     ${kasirSatuan.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
@@ -1500,7 +1595,6 @@
                                 <input type="checkbox" id="kasir-item-weighable"> Produk Timbangan (harga per kg)
                             </label>
                         </div>
-                        <!-- Tambahan: checkbox batch dan serial -->
                         <div class="form-group">
                             <label>
                                 <input type="checkbox" id="kasir-item-track-batch"> Lacak Batch (Expiry Date)
@@ -1546,10 +1640,7 @@
             // Inisialisasi level harga
             const levelContainer = document.getElementById('level-harga-container');
             levelContainer.innerHTML = '';
-            addLevelRow();
-            addLevelRow();
-            addLevelRow();
-            tempUnitConversions = [];
+            addLevelRow(); // Baris kosong untuk diisi
             renderConversionsList();
         }
 
@@ -1560,35 +1651,43 @@
                 navigateTo('listItems');
                 return;
             }
-            showAddItemPage();
             editingItemId = itemId;
-            document.getElementById('kasir-item-name').value = item.name;
-            document.getElementById('kasir-item-code').value = item.code;
-            document.getElementById('kasir-item-barcode').value = item.barcode || item.code;
-            document.getElementById('kasir-item-category').value = item.categoryId || '';
-            document.getElementById('kasir-item-harga-dasar').value = item.hargaDasar || '';
-            document.getElementById('kasir-item-harga-jual').value = item.hargaJual || '';
-            document.getElementById('kasir-item-berat').value = item.berat || '';
-            document.getElementById('kasir-item-satuan').value = item.satuanId || '';
-            document.getElementById('kasir-item-diskon').value = item.diskon || '';
-            document.getElementById('kasir-item-stock').value = item.stock || 0;
-            document.getElementById('kasir-item-min-stock').value = item.minStock || 5;
-            document.getElementById('kasir-item-weighable').checked = item.isWeighable || false;
-            document.getElementById('kasir-item-track-batch').checked = item.track_batch || false;
-            document.getElementById('kasir-item-track-serial').checked = item.track_serial || false;
-
-            const levelContainer = document.getElementById('level-harga-container');
-            levelContainer.innerHTML = '';
-            if (item.priceLevels && item.priceLevels.length > 0) {
-                item.priceLevels.forEach(l => addLevelRow(l.minQty, l.price));
-            } else {
-                addLevelRow();
-                addLevelRow();
-                addLevelRow();
-            }
-
             tempUnitConversions = item.unitConversions ? JSON.parse(JSON.stringify(item.unitConversions)) : [];
-            renderConversionsList();
+            // Pastikan setiap konversi memiliki id unik
+            tempUnitConversions = tempUnitConversions.map((conv, idx) => {
+                if (!conv.id) conv.id = idx + 1; // atau generate id sementara
+                return conv;
+            });
+
+            showAddItemPage(); // Ini akan mereset tampilan, tapi kita akan isi setelahnya
+
+            // Tunggu sampai DOM terupdate (gunakan setTimeout)
+            setTimeout(() => {
+                document.getElementById('kasir-item-name').value = item.name || '';
+                document.getElementById('kasir-item-code').value = item.code || '';
+                document.getElementById('kasir-item-barcode').value = item.barcode || item.code || '';
+                document.getElementById('kasir-item-category').value = item.categoryId || '';
+                document.getElementById('kasir-item-harga-dasar').value = item.hargaDasar || '';
+                document.getElementById('kasir-item-harga-jual').value = item.hargaJual || '';
+                document.getElementById('kasir-item-berat').value = item.berat || '';
+                document.getElementById('kasir-item-satuan').value = item.satuanId || '';
+                document.getElementById('kasir-item-diskon').value = item.diskon || '';
+                document.getElementById('kasir-item-stock').value = item.stock || 0;
+                document.getElementById('kasir-item-min-stock').value = item.minStock || 5;
+                document.getElementById('kasir-item-weighable').checked = item.isWeighable || false;
+                document.getElementById('kasir-item-track-batch').checked = item.track_batch || false;
+                document.getElementById('kasir-item-track-serial').checked = item.track_serial || false;
+
+                const levelContainer = document.getElementById('level-harga-container');
+                levelContainer.innerHTML = '';
+                if (item.priceLevels && item.priceLevels.length > 0) {
+                    item.priceLevels.forEach(l => addLevelRow(l.minQty, l.price));
+                } else {
+                    addLevelRow();
+                }
+
+                renderConversionsList();
+            }, 0);
         }
 
         async function saveKasirItemFromPage() {
@@ -1598,11 +1697,11 @@
             const name = document.getElementById('kasir-item-name').value.trim();
             const code = document.getElementById('kasir-item-code').value.trim();
             const barcode = document.getElementById('kasir-item-barcode').value.trim() || code;
-            const categoryId = document.getElementById('kasir-item-category').value || null;
+            const categoryId = document.getElementById('kasir-item-category').value ? parseInt(document.getElementById('kasir-item-category').value) : null;
             const hargaDasar = parseFloat(document.getElementById('kasir-item-harga-dasar').value) || null;
             const hargaJual = parseFloat(document.getElementById('kasir-item-harga-jual').value) || null;
             const berat = parseFloat(document.getElementById('kasir-item-berat').value) || null;
-            const satuanId = document.getElementById('kasir-item-satuan').value || null;
+            const satuanId = document.getElementById('kasir-item-satuan').value ? parseInt(document.getElementById('kasir-item-satuan').value) : null;
             const diskon = parseFloat(document.getElementById('kasir-item-diskon').value) || null;
             const stock = parseFloat(document.getElementById('kasir-item-stock').value) || 0;
             const minStock = parseFloat(document.getElementById('kasir-item-min-stock').value) || 5;
@@ -1617,13 +1716,28 @@
                 return;
             }
 
+            // Validasi duplikat kode
             const duplicate = kasirItems.find(i => i.code === code && i.id !== editingItemId);
             if (duplicate) {
                 showNotification(`Kode "${code}" sudah digunakan!`, 'error');
                 return;
             }
 
-            const unitConversions = tempUnitConversions || [];
+            // Validasi kategori dan satuan jika dipilih
+            if (categoryId && !kasirCategories.some(c => c.id === categoryId)) {
+                showNotification('Kategori tidak valid', 'error');
+                return;
+            }
+            if (satuanId && !kasirSatuan.some(s => s.id === satuanId)) {
+                showNotification('Satuan tidak valid', 'error');
+                return;
+            }
+
+            const unitConversions = tempUnitConversions.map(conv => {
+                // Pastikan setiap konversi memiliki id unik (gunakan timestamp + index)
+                if (!conv.id) conv.id = Date.now() + Math.floor(Math.random() * 1000);
+                return conv;
+            });
 
             const now = new Date().toISOString();
 
@@ -1631,23 +1745,12 @@
                 if (editingItemId) {
                     const item = kasirItems.find(i => i.id === editingItemId);
                     if (item) {
-                        item.name = name;
-                        item.code = code;
-                        item.barcode = barcode;
-                        item.categoryId = categoryId;
-                        item.hargaDasar = hargaDasar;
-                        item.hargaJual = hargaJual;
-                        item.berat = berat;
-                        item.satuanId = satuanId;
-                        item.diskon = diskon;
-                        item.stock = stock;
-                        item.minStock = minStock;
-                        item.isWeighable = isWeighable;
-                        item.track_batch = track_batch;
-                        item.track_serial = track_serial;
-                        item.priceLevels = priceLevels;
-                        item.unitConversions = unitConversions;
-                        item.updatedAt = now;
+                        Object.assign(item, {
+                            name, code, barcode, categoryId, hargaDasar, hargaJual, berat, satuanId,
+                            diskon, stock, minStock, isWeighable, track_batch, track_serial,
+                            priceLevels, unitConversions,
+                            updatedAt: now
+                        });
                         await dbPut(STORES.KASIR_ITEMS, item);
                     }
                 } else {
@@ -1667,14 +1770,691 @@
             }
         }
 
-        // ==================== FUNGSI LAINNYA (KATEGORI, SATUAN, BUNDLE, DLL) TETAP SAMA ====================
-        // ... (fungsi-fungsi lain yang sudah ada, seperti showAddCategoryPage, showEditCategoryPage, showCategoryListPage,
-        // showAddUnitPage, showEditUnitPage, showUnitListPage, showAddBundlePage, showEditBundlePage, showBundleListPage,
-        // dan fungsi-fungsi pendukung seperti addLevelRow, getPriceLevelsFromDOM, renderConversionsList, showConversionModal,
-        // closeConversionModal, saveConversionFromModal, editConversion, deleteConversion, dll.)
+        // ==================== FUNGSI LEVEL HARGA ====================
+        function addLevelRow(minQty = '', price = '') {
+            const container = document.getElementById('level-harga-container');
+            const index = container.children.length + 1;
+            const row = document.createElement('div');
+            row.className = 'level-harga-item';
+            row.innerHTML = `
+                <span class="level-number">Level ${index}</span>
+                <input type="number" class="form-input level-minqty" placeholder="Min. Qty" value="${minQty}" min="1" step="1">
+                <input type="number" class="form-input level-price" placeholder="Harga" value="${price}" min="0" step="0.01">
+                <button type="button" class="level-harga-remove" onclick="this.closest('.level-harga-item').remove()">×</button>
+            `;
+            container.appendChild(row);
+        }
 
-        // Untuk menghemat ruang, kita asumsikan fungsi-fungsi tersebut tetap sama seperti di versi sebelumnya.
-        // Dalam implementasi nyata, kita akan menyertakan semua fungsi yang sudah ada.
+        function getPriceLevelsFromDOM() {
+            const rows = document.querySelectorAll('.level-harga-item');
+            const levels = [];
+            rows.forEach(row => {
+                const minQty = parseFloat(row.querySelector('.level-minqty').value);
+                const price = parseFloat(row.querySelector('.level-price').value);
+                if (!isNaN(minQty) && !isNaN(price) && minQty > 0 && price >= 0) {
+                    levels.push({ minQty, price });
+                }
+            });
+            // Urutkan berdasarkan minQty
+            levels.sort((a, b) => a.minQty - b.minQty);
+            return levels;
+        }
+
+        // ==================== FUNGSI KONVERSI SATUAN ====================
+        function renderConversionsList() {
+            const list = document.getElementById('conversions-list');
+            if (!list) return;
+            list.innerHTML = '';
+            if (tempUnitConversions.length === 0) {
+                list.innerHTML = '<p style="color:#666; text-align:center;">Belum ada konversi</p>';
+                return;
+            }
+            tempUnitConversions.forEach((conv, index) => {
+                const unitName = kasirSatuan.find(s => s.id === conv.unit)?.name || '?';
+                const div = document.createElement('div');
+                div.className = 'conversion-item';
+                div.innerHTML = `
+                    <div class="conversion-info">
+                        <strong>${unitName}</strong> = ${conv.value} satuan dasar<br>
+                        Barcode: ${conv.barcode || '-'}<br>
+                        Harga Jual: ${formatRupiah(conv.sellPrice || 0)}
+                    </div>
+                    <div class="conversion-actions">
+                        <button class="action-btn edit-btn" onclick="editConversion(${index})">✏️</button>
+                        <button class="action-btn delete-btn" onclick="deleteConversion(${index})">🗑️</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function showConversionModal() {
+            // Reset form
+            document.getElementById('conv-unit').innerHTML = '<option value="">-- Pilih Satuan --</option>' + 
+                kasirSatuan.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            document.getElementById('conv-value').value = '';
+            document.getElementById('conv-barcode').value = '';
+            document.getElementById('conv-sku').value = '';
+            document.getElementById('conv-base-price').value = '';
+            document.getElementById('conv-sell-price').value = '';
+            document.getElementById('conv-points').value = '';
+            document.getElementById('conv-commission').value = '';
+            editingConversionIndex = -1;
+            document.getElementById('conversion-modal-title').textContent = 'Tambah Konversi Satuan';
+            document.getElementById('conversion-modal').style.display = 'flex';
+        }
+
+        function editConversion(index) {
+            const conv = tempUnitConversions[index];
+            if (!conv) return;
+            // Isi form
+            const unitSelect = document.getElementById('conv-unit');
+            unitSelect.innerHTML = '<option value="">-- Pilih Satuan --</option>' + 
+                kasirSatuan.map(s => `<option value="${s.id}" ${s.id === conv.unit ? 'selected' : ''}>${s.name}</option>`).join('');
+            document.getElementById('conv-value').value = conv.value;
+            document.getElementById('conv-barcode').value = conv.barcode || '';
+            document.getElementById('conv-sku').value = conv.sku || '';
+            document.getElementById('conv-base-price').value = conv.basePrice || '';
+            document.getElementById('conv-sell-price').value = conv.sellPrice || '';
+            document.getElementById('conv-points').value = conv.points || '';
+            document.getElementById('conv-commission').value = conv.commission || '';
+            editingConversionIndex = index;
+            document.getElementById('conversion-modal-title').textContent = 'Edit Konversi Satuan';
+            document.getElementById('conversion-modal').style.display = 'flex';
+        }
+
+        function deleteConversion(index) {
+            if (confirm('Hapus konversi ini?')) {
+                tempUnitConversions.splice(index, 1);
+                renderConversionsList();
+            }
+        }
+
+        function closeConversionModal() {
+            document.getElementById('conversion-modal').style.display = 'none';
+        }
+
+        function saveConversionFromModal() {
+            const unit = parseInt(document.getElementById('conv-unit').value);
+            const value = parseFloat(document.getElementById('conv-value').value);
+            const barcode = document.getElementById('conv-barcode').value.trim();
+            const sku = document.getElementById('conv-sku').value.trim();
+            const basePrice = parseFloat(document.getElementById('conv-base-price').value) || null;
+            const sellPrice = parseFloat(document.getElementById('conv-sell-price').value) || null;
+            const points = parseFloat(document.getElementById('conv-points').value) || null;
+            const commission = parseFloat(document.getElementById('conv-commission').value) || null;
+
+            if (!unit || isNaN(value) || value <= 0) {
+                showNotification('Satuan dan nilai harus diisi dengan benar', 'error');
+                return;
+            }
+
+            // Cek duplikasi satuan dalam konversi (kecuali sedang edit index yang sama)
+            const existingIndex = tempUnitConversions.findIndex((c, idx) => c.unit === unit && idx !== editingConversionIndex);
+            if (existingIndex !== -1) {
+                showNotification('Satuan ini sudah ada dalam daftar konversi', 'error');
+                return;
+            }
+
+            const conversion = {
+                id: editingConversionIndex >= 0 ? tempUnitConversions[editingConversionIndex].id : Date.now() + Math.random(),
+                unit,
+                value,
+                barcode,
+                sku,
+                basePrice,
+                sellPrice,
+                points,
+                commission
+            };
+
+            if (editingConversionIndex >= 0) {
+                tempUnitConversions[editingConversionIndex] = conversion;
+            } else {
+                tempUnitConversions.push(conversion);
+            }
+
+            renderConversionsList();
+            closeConversionModal();
+        }
+
+        // ==================== MODAL PILIH ITEM ====================
+        function showSelectItemModal(callback) {
+            selectItemCallback = callback;
+            document.getElementById('item-search-input').value = '';
+            document.getElementById('item-list-container').innerHTML = '<div style="text-align:center; padding:20px; color:#666;">Ketikkan pencarian...</div>';
+            document.getElementById('select-item-modal').style.display = 'flex';
+        }
+
+        function closeSelectItemModal() {
+            document.getElementById('select-item-modal').style.display = 'none';
+            selectItemCallback = null;
+        }
+
+        function searchItems() {
+            const keyword = document.getElementById('item-search-input').value.toLowerCase().trim();
+            const container = document.getElementById('item-list-container');
+            if (!keyword) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">Ketikkan pencarian...</div>';
+                return;
+            }
+            const filtered = kasirItems.filter(item => 
+                item.name.toLowerCase().includes(keyword) || 
+                item.code.toLowerCase().includes(keyword) || 
+                (item.barcode && item.barcode.toLowerCase().includes(keyword))
+            );
+            if (filtered.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">Tidak ditemukan</div>';
+                return;
+            }
+            let html = '';
+            filtered.forEach(item => {
+                html += `
+                    <div class="item-row">
+                        <div class="item-info">
+                            <div class="item-name">${item.name}</div>
+                            <div class="item-details">
+                                <span class="item-code">${item.code}</span>
+                                ${item.barcode ? `<span class="item-barcode">${item.barcode}</span>` : ''}
+                            </div>
+                        </div>
+                        <button class="select-btn" onclick="selectItem(${item.id})">Pilih</button>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function selectItem(itemId) {
+            const item = kasirItems.find(i => i.id === itemId);
+            if (selectItemCallback && item) {
+                selectItemCallback(item);
+            }
+            closeSelectItemModal();
+        }
+
+        // ==================== FUNGSI KATEGORI ====================
+        function showCategoryListPage() {
+            const categories = kasirCategories;
+            let rows = '';
+            categories.forEach(cat => {
+                rows += `
+                    <tr>
+                        <td>${cat.name}</td>
+                        <td>${cat.description || '-'}</td>
+                        <td>
+                            <button class="action-btn edit-btn" onclick="navigateTo('editCategory', ${cat.id})">✏️</button>
+                            <button class="action-btn delete-btn" onclick="deleteCategoryPrompt(${cat.id})">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            const html = `
+                <div class="content-card">
+                    <h2 class="page-title">
+                        Daftar Kategori
+                        <button class="form-button-primary" style="margin-left:auto;" onclick="navigateTo('addCategory')">+ Tambah Kategori</button>
+                    </h2>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nama</th>
+                                    <th>Deskripsi</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rows || '<tr><td colspan="3" style="text-align:center;">Belum ada kategori</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            document.getElementById('master-content').innerHTML = html;
+        }
+
+        function showAddCategoryPage() {
+            editingCategoryId = null;
+            const html = `
+                <div class="content-card">
+                    <h2 class="page-title">
+                        <button class="back-button" onclick="navigateTo('listCategories')">
+                            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12 19 5 12 12 5"></polyline>
+                            </svg>
+                        </button>
+                        Tambah Kategori
+                    </h2>
+                    <form id="category-form" onsubmit="event.preventDefault();">
+                        <div class="form-group">
+                            <label>Nama Kategori *</label>
+                            <input type="text" id="category-name" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Deskripsi</label>
+                            <textarea id="category-description" class="form-textarea" rows="3"></textarea>
+                        </div>
+                        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
+                            <button type="button" class="form-button-secondary" onclick="navigateTo('listCategories')">Batal</button>
+                            <button type="button" class="form-button-primary" onclick="saveCategoryFromPage()">Simpan</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            document.getElementById('master-content').innerHTML = html;
+        }
+
+        function showEditCategoryPage(id) {
+            const category = kasirCategories.find(c => c.id === id);
+            if (!category) {
+                navigateTo('listCategories');
+                return;
+            }
+            editingCategoryId = id;
+            showAddCategoryPage();
+            setTimeout(() => {
+                document.getElementById('category-name').value = category.name;
+                document.getElementById('category-description').value = category.description || '';
+            }, 0);
+        }
+
+        async function saveCategoryFromPage() {
+            const name = document.getElementById('category-name').value.trim();
+            const description = document.getElementById('category-description').value.trim();
+            if (!name) {
+                showNotification('Nama kategori harus diisi', 'error');
+                return;
+            }
+            const duplicate = kasirCategories.find(c => c.name.toLowerCase() === name.toLowerCase() && c.id !== editingCategoryId);
+            if (duplicate) {
+                showNotification('Nama kategori sudah digunakan', 'error');
+                return;
+            }
+            try {
+                if (editingCategoryId) {
+                    const cat = kasirCategories.find(c => c.id === editingCategoryId);
+                    cat.name = name;
+                    cat.description = description;
+                    cat.updatedAt = new Date().toISOString();
+                    await dbPut(STORES.KASIR_CATEGORIES, cat);
+                } else {
+                    const newCat = {
+                        name,
+                        description,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    };
+                    await dbAdd(STORES.KASIR_CATEGORIES, newCat);
+                }
+                await loadKasirCategories();
+                showNotification('Kategori disimpan', 'success');
+                navigateTo('listCategories');
+            } catch (error) {
+                showNotification('Gagal menyimpan: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteCategoryPrompt(id) {
+            if (confirm('Hapus kategori ini? Item dengan kategori ini akan kehilangan kategori.')) {
+                try {
+                    await dbDelete(STORES.KASIR_CATEGORIES, id);
+                    // Update item yang menggunakan kategori ini (set ke null)
+                    const itemsToUpdate = kasirItems.filter(i => i.categoryId === id);
+                    for (let item of itemsToUpdate) {
+                        item.categoryId = null;
+                        await dbPut(STORES.KASIR_ITEMS, item);
+                    }
+                    await loadKasirCategories();
+                    await loadKasirItems();
+                    showNotification('Kategori dihapus', 'success');
+                    showCategoryListPage();
+                } catch (error) {
+                    showNotification('Gagal hapus: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // ==================== FUNGSI SATUAN ====================
+        function showUnitListPage() {
+            const units = kasirSatuan;
+            let rows = '';
+            units.forEach(unit => {
+                rows += `
+                    <tr>
+                        <td>${unit.name}</td>
+                        <td>${unit.symbol || '-'}</td>
+                        <td>
+                            <button class="action-btn edit-btn" onclick="navigateTo('editUnit', ${unit.id})">✏️</button>
+                            <button class="action-btn delete-btn" onclick="deleteUnitPrompt(${unit.id})">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            const html = `
+                <div class="content-card">
+                    <h2 class="page-title">
+                        Daftar Satuan
+                        <button class="form-button-primary" style="margin-left:auto;" onclick="navigateTo('addUnit')">+ Tambah Satuan</button>
+                    </h2>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nama</th>
+                                    <th>Simbol</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rows || '<tr><td colspan="3" style="text-align:center;">Belum ada satuan</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            document.getElementById('master-content').innerHTML = html;
+        }
+
+        function showAddUnitPage() {
+            editingUnitId = null;
+            const html = `
+                <div class="content-card">
+                    <h2 class="page-title">
+                        <button class="back-button" onclick="navigateTo('listUnits')">
+                            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12 19 5 12 12 5"></polyline>
+                            </svg>
+                        </button>
+                        Tambah Satuan
+                    </h2>
+                    <form id="unit-form" onsubmit="event.preventDefault();">
+                        <div class="form-group">
+                            <label>Nama Satuan *</label>
+                            <input type="text" id="unit-name" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Simbol (opsional)</label>
+                            <input type="text" id="unit-symbol" class="form-input">
+                        </div>
+                        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
+                            <button type="button" class="form-button-secondary" onclick="navigateTo('listUnits')">Batal</button>
+                            <button type="button" class="form-button-primary" onclick="saveUnitFromPage()">Simpan</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            document.getElementById('master-content').innerHTML = html;
+        }
+
+        function showEditUnitPage(id) {
+            const unit = kasirSatuan.find(u => u.id === id);
+            if (!unit) {
+                navigateTo('listUnits');
+                return;
+            }
+            editingUnitId = id;
+            showAddUnitPage();
+            setTimeout(() => {
+                document.getElementById('unit-name').value = unit.name;
+                document.getElementById('unit-symbol').value = unit.symbol || '';
+            }, 0);
+        }
+
+        async function saveUnitFromPage() {
+            const name = document.getElementById('unit-name').value.trim();
+            const symbol = document.getElementById('unit-symbol').value.trim();
+            if (!name) {
+                showNotification('Nama satuan harus diisi', 'error');
+                return;
+            }
+            const duplicate = kasirSatuan.find(u => u.name.toLowerCase() === name.toLowerCase() && u.id !== editingUnitId);
+            if (duplicate) {
+                showNotification('Nama satuan sudah digunakan', 'error');
+                return;
+            }
+            try {
+                if (editingUnitId) {
+                    const unit = kasirSatuan.find(u => u.id === editingUnitId);
+                    unit.name = name;
+                    unit.symbol = symbol;
+                    unit.updatedAt = new Date().toISOString();
+                    await dbPut(STORES.KASIR_SATUAN, unit);
+                } else {
+                    const newUnit = {
+                        name,
+                        symbol,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    };
+                    await dbAdd(STORES.KASIR_SATUAN, newUnit);
+                }
+                await loadKasirSatuan();
+                showNotification('Satuan disimpan', 'success');
+                navigateTo('listUnits');
+            } catch (error) {
+                showNotification('Gagal menyimpan: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteUnitPrompt(id) {
+            if (confirm('Hapus satuan ini? Item yang menggunakan satuan ini akan kehilangan satuan.')) {
+                try {
+                    await dbDelete(STORES.KASIR_SATUAN, id);
+                    // Update item yang menggunakan satuan ini (set ke null)
+                    const itemsToUpdate = kasirItems.filter(i => i.satuanId === id);
+                    for (let item of itemsToUpdate) {
+                        item.satuanId = null;
+                        await dbPut(STORES.KASIR_ITEMS, item);
+                    }
+                    await loadKasirSatuan();
+                    await loadKasirItems();
+                    showNotification('Satuan dihapus', 'success');
+                    showUnitListPage();
+                } catch (error) {
+                    showNotification('Gagal hapus: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // ==================== FUNGSI BUNDLE ====================
+        function showBundleListPage() {
+            const bundlesList = bundles;
+            let rows = '';
+            bundlesList.forEach(bundle => {
+                rows += `
+                    <tr>
+                        <td>${bundle.name}</td>
+                        <td>${bundle.price ? formatRupiah(bundle.price) : '-'}</td>
+                        <td>${bundle.items ? bundle.items.length : 0}</td>
+                        <td>
+                            <button class="action-btn edit-btn" onclick="navigateTo('editBundle', ${bundle.id})">✏️</button>
+                            <button class="action-btn delete-btn" onclick="deleteBundlePrompt(${bundle.id})">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            const html = `
+                <div class="content-card">
+                    <h2 class="page-title">
+                        Daftar Bundle
+                        <button class="form-button-primary" style="margin-left:auto;" onclick="navigateTo('addBundle')">+ Tambah Bundle</button>
+                    </h2>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nama Bundle</th>
+                                    <th>Harga</th>
+                                    <th>Jumlah Item</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rows || '<tr><td colspan="4" style="text-align:center;">Belum ada bundle</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            document.getElementById('master-content').innerHTML = html;
+        }
+
+        function showAddBundlePage() {
+            editingBundleId = null;
+            const html = `
+                <div class="content-card">
+                    <h2 class="page-title">
+                        <button class="back-button" onclick="navigateTo('listBundles')">
+                            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12 19 5 12 12 5"></polyline>
+                            </svg>
+                        </button>
+                        Tambah Bundle
+                    </h2>
+                    <form id="bundle-form" onsubmit="event.preventDefault();">
+                        <div class="form-group">
+                            <label>Nama Bundle *</label>
+                            <input type="text" id="bundle-name" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Harga Bundle</label>
+                            <input type="number" id="bundle-price" class="form-input" min="0" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Deskripsi</label>
+                            <textarea id="bundle-description" class="form-textarea" rows="3"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Item dalam Bundle</label>
+                            <button type="button" class="btn-add-level" onclick="showSelectItemModal(addBundleItem)">+ Tambah Item</button>
+                            <div id="bundle-items-container" class="conversions-list" style="margin-top:10px;"></div>
+                        </div>
+                        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
+                            <button type="button" class="form-button-secondary" onclick="navigateTo('listBundles')">Batal</button>
+                            <button type="button" class="form-button-primary" onclick="saveBundleFromPage()">Simpan</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            document.getElementById('master-content').innerHTML = html;
+        }
+
+        function showEditBundlePage(id) {
+            const bundle = bundles.find(b => b.id === id);
+            if (!bundle) {
+                navigateTo('listBundles');
+                return;
+            }
+            editingBundleId = id;
+            showAddBundlePage();
+            setTimeout(() => {
+                document.getElementById('bundle-name').value = bundle.name;
+                document.getElementById('bundle-price').value = bundle.price || '';
+                document.getElementById('bundle-description').value = bundle.description || '';
+                if (bundle.items) {
+                    bundle.items.forEach(item => addBundleItemRow(item));
+                }
+            }, 0);
+        }
+
+        function addBundleItem(item) {
+            // item adalah objek item yang dipilih dari modal
+            addBundleItemRow({ itemId: item.id, quantity: 1 });
+        }
+
+        function addBundleItemRow(data) {
+            const container = document.getElementById('bundle-items-container');
+            const row = document.createElement('div');
+            row.className = 'bom-component-row'; // gunakan style yang sama
+            const item = kasirItems.find(i => i.id === data.itemId);
+            row.innerHTML = `
+                <span style="flex:2;">${item ? item.name : 'Item tidak ditemukan'}</span>
+                <input type="number" class="form-input" value="${data.quantity || 1}" min="0.01" step="0.01" style="flex:1;" onchange="updateBundleItemQty(this)">
+                <input type="hidden" class="bundle-item-id" value="${data.itemId}">
+                <button type="button" class="level-harga-remove" onclick="this.closest('.bom-component-row').remove()">×</button>
+            `;
+            container.appendChild(row);
+        }
+
+        function updateBundleItemQty(input) {
+            // tidak perlu action khusus, nilai akan diambil saat simpan
+        }
+
+        function collectBundleItems() {
+            const rows = document.querySelectorAll('#bundle-items-container .bom-component-row');
+            const items = [];
+            rows.forEach(row => {
+                const itemId = parseInt(row.querySelector('.bundle-item-id').value);
+                const qty = parseFloat(row.querySelector('input[type=number]').value);
+                if (itemId && qty > 0) {
+                    items.push({ itemId, quantity: qty });
+                }
+            });
+            return items;
+        }
+
+        async function saveBundleFromPage() {
+            const name = document.getElementById('bundle-name').value.trim();
+            const price = parseFloat(document.getElementById('bundle-price').value) || null;
+            const description = document.getElementById('bundle-description').value.trim();
+            const items = collectBundleItems();
+
+            if (!name) {
+                showNotification('Nama bundle harus diisi', 'error');
+                return;
+            }
+            if (items.length === 0) {
+                showNotification('Bundle harus memiliki minimal satu item', 'error');
+                return;
+            }
+
+            try {
+                const now = new Date().toISOString();
+                if (editingBundleId) {
+                    const bundle = bundles.find(b => b.id === editingBundleId);
+                    if (bundle) {
+                        bundle.name = name;
+                        bundle.price = price;
+                        bundle.description = description;
+                        bundle.items = items;
+                        bundle.updatedAt = now;
+                        await dbPut(STORES.BUNDLES, bundle);
+                    }
+                } else {
+                    const newBundle = {
+                        name,
+                        price,
+                        description,
+                        items,
+                        createdAt: now,
+                        updatedAt: now
+                    };
+                    await dbAdd(STORES.BUNDLES, newBundle);
+                }
+                await loadBundles();
+                showNotification('Bundle disimpan', 'success');
+                navigateTo('listBundles');
+            } catch (error) {
+                showNotification('Gagal menyimpan: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteBundlePrompt(id) {
+            if (confirm('Hapus bundle ini?')) {
+                try {
+                    await dbDelete(STORES.BUNDLES, id);
+                    await loadBundles();
+                    showNotification('Bundle dihapus', 'success');
+                    showBundleListPage();
+                } catch (error) {
+                    showNotification('Gagal hapus: ' + error.message, 'error');
+                }
+            }
+        }
 
         // ==================== LOGOUT ====================
         function logout() {
@@ -1724,7 +2504,7 @@
                 } else if (action === 'editItem' && id) {
                     showEditItemPage(parseInt(id));
                 } else if (action === 'listItems') {
-                    showItemListPage(); // perlu didefinisikan
+                    showItemListPage();
                 } else if (action === 'addCategory') {
                     showAddCategoryPage();
                 } else if (action === 'editCategory' && id) {
@@ -1750,10 +2530,11 @@
                 } else if (action === 'listBOMs') {
                     showBOMListPage();
                 } else {
+                    // Tampilkan halaman utama master data
                     document.getElementById('master-content').innerHTML = `
                         <div class="content-card">
                             <h2 class="page-title">Master Data</h2>
-                            <p>Silakan pilih menu di samping.</p>
+                            <p>Silakan pilih menu di samping untuk mengelola data master.</p>
                         </div>
                     `;
                 }
@@ -1765,27 +2546,45 @@
 
         initMasterPage();
 
+        // Tutup modal jika klik di luar konten
         window.onclick = function(event) {
             if (event.target.classList.contains('modal-overlay')) {
-                if (event.target.id === 'conversion-modal') {
-                    closeConversionModal();
-                } else if (event.target.id === 'select-item-modal') {
-                    closeSelectItemModal();
-                } else if (event.target.id === 'bom-view-modal') {
-                    closeBOMViewModal();
-                } else {
-                    event.target.style.display = 'none';
-                }
+                event.target.style.display = 'none';
             }
         };
 
-        // Ekspor fungsi BOM ke global
+        // Ekspor fungsi ke global
+        window.toggleDrawer = toggleDrawer;
+        window.closeDrawer = closeDrawer;
+        window.toggleSubMenu = toggleSubMenu;
+        window.navigateTo = navigateTo;
+        window.logout = logout;
+        window.showConversionModal = showConversionModal;
+        window.closeConversionModal = closeConversionModal;
+        window.saveConversionFromModal = saveConversionFromModal;
+        window.editConversion = editConversion;
+        window.deleteConversion = deleteConversion;
+        window.addLevelRow = addLevelRow;
         window.addBOMComponentRow = addBOMComponentRow;
         window.updateUnitOptions = updateUnitOptions;
         window.saveBOMFromPage = saveBOMFromPage;
         window.viewBOM = viewBOM;
         window.closeBOMViewModal = closeBOMViewModal;
         window.deleteBOMPrompt = deleteBOMPrompt;
+        window.showSelectItemModal = showSelectItemModal;
+        window.closeSelectItemModal = closeSelectItemModal;
+        window.searchItems = searchItems;
+        window.selectItem = selectItem;
+        window.addBundleItem = addBundleItem;
+        window.updateBundleItemQty = updateBundleItemQty;
+        window.saveCategoryFromPage = saveCategoryFromPage;
+        window.saveUnitFromPage = saveUnitFromPage;
+        window.saveBundleFromPage = saveBundleFromPage;
+        window.saveKasirItemFromPage = saveKasirItemFromPage;
+        window.deleteCategoryPrompt = deleteCategoryPrompt;
+        window.deleteUnitPrompt = deleteUnitPrompt;
+        window.deleteBundlePrompt = deleteBundlePrompt;
+        window.deleteItemPrompt = deleteItemPrompt;
     </script>
 </body>
 </html>
