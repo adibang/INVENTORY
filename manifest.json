@@ -1,0 +1,60 @@
+{
+  "name": "MUDA",
+  "short_name": "MUDA",
+  "description": "Aplikasi Point of Sale (POS) yang lengkap dan mudah digunakan.",
+  "start_url": "/MudaPOS/",
+  "display": "standalone",
+  "background_color": "#f5f5f5",
+  "theme_color": "#006B54",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/MudaPOS/icons/72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/MudaPOS/icons/96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/MudaPOS/icons/128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/MudaPOS/icons/144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/MudaPOS/icons/152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/MudaPOS/icons/192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/MudaPOS/icons/384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/MudaPOS/icons/512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
