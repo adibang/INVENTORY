@@ -1654,6 +1654,7 @@
             }, 0);
         }
 
+        // ==================== FUNGSI SAVE KATEGORI (DIPERBAIKI) ====================
         async function saveCategoryFromPage() {
             const name = document.getElementById('category-name').value.trim();
             const description = document.getElementById('category-description').value.trim();
@@ -1668,7 +1669,9 @@
             }
             try {
                 if (editingCategoryId) {
-                    const cat = kasirCategories.find(c => c.id === editingCategoryId);
+                    // Ambil data terkini dari database
+                    const cat = await dbGet(STORES.KASIR_CATEGORIES, editingCategoryId);
+                    if (!cat) throw new Error('Kategori tidak ditemukan');
                     cat.name = name;
                     cat.description = description;
                     cat.updatedAt = new Date().toISOString();
@@ -1690,26 +1693,7 @@
             }
         }
 
-        async function deleteCategoryPrompt(id) {
-            if (confirm('Hapus kategori ini? Item dengan kategori ini akan kehilangan kategori.')) {
-                try {
-                    await dbDelete(STORES.KASIR_CATEGORIES, id);
-                    const itemsToUpdate = kasirItems.filter(i => i.categoryId === id);
-                    for (let item of itemsToUpdate) {
-                        item.categoryId = null;
-                        await dbPut(STORES.KASIR_ITEMS, item);
-                    }
-                    await loadKasirCategories();
-                    await loadKasirItems();
-                    showNotification('Kategori dihapus', 'success');
-                    showCategoryListPage();
-                } catch (error) {
-                    showNotification('Gagal hapus: ' + error.message, 'error');
-                }
-            }
-        }
-
-        // ==================== FUNGSI SATUAN (TETAP SAMA, TANPA PENCARIAN) ====================
+        // ==================== FUNGSI SATUAN ====================
         function showUnitListPage() {
             const units = kasirSatuan;
             let rows = '';
@@ -1796,6 +1780,7 @@
             }, 0);
         }
 
+        // ==================== FUNGSI SAVE SATUAN (DIPERBAIKI) ====================
         async function saveUnitFromPage() {
             const name = document.getElementById('unit-name').value.trim();
             const symbol = document.getElementById('unit-symbol').value.trim();
@@ -1810,7 +1795,9 @@
             }
             try {
                 if (editingUnitId) {
-                    const unit = kasirSatuan.find(u => u.id === editingUnitId);
+                    // Ambil data terkini dari database
+                    const unit = await dbGet(STORES.KASIR_SATUAN, editingUnitId);
+                    if (!unit) throw new Error('Satuan tidak ditemukan');
                     unit.name = name;
                     unit.symbol = symbol;
                     unit.updatedAt = new Date().toISOString();
@@ -1851,7 +1838,7 @@
             }
         }
 
-        // ==================== FUNGSI BUNDLE (TANPA PENCARIAN) ====================
+        // ==================== FUNGSI BUNDLE ====================
         function showBundleListPage() {
             const bundlesList = bundles;
             let rows = '';
@@ -2215,6 +2202,7 @@
             }, 0);
         }
 
+        // ==================== FUNGSI SAVE ITEM (DIPERBAIKI) ====================
         async function saveKasirItemFromPage() {
             if (editingItemId) {
                 editingItemId = Number(editingItemId);
@@ -2265,16 +2253,16 @@
 
             try {
                 if (editingItemId) {
-                    const item = kasirItems.find(i => i.id === editingItemId);
-                    if (item) {
-                        Object.assign(item, {
-                            name, code, barcode, categoryId, hargaDasar, hargaJual, berat, satuanId,
-                            diskon, stock, minStock, isWeighable, track_batch, track_serial,
-                            priceLevels, unitConversions,
-                            updatedAt: now
-                        });
-                        await dbPut(STORES.KASIR_ITEMS, item);
-                    }
+                    // Ambil data terkini dari database
+                    const item = await dbGet(STORES.KASIR_ITEMS, editingItemId);
+                    if (!item) throw new Error('Item tidak ditemukan');
+                    Object.assign(item, {
+                        name, code, barcode, categoryId, hargaDasar, hargaJual, berat, satuanId,
+                        diskon, stock, minStock, isWeighable, track_batch, track_serial,
+                        priceLevels, unitConversions,
+                        updatedAt: now
+                    });
+                    await dbPut(STORES.KASIR_ITEMS, item);
                 } else {
                     const newItem = {
                         name, code, barcode, categoryId, hargaDasar, hargaJual, berat, satuanId,
