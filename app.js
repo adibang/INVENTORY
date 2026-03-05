@@ -2490,14 +2490,41 @@ function openTransaksiPage() {
     if (cartPage) cartPage.style.display = 'none';
     if (paymentPage) paymentPage.style.display = 'none';
     
-    ensureWarehouseSelector();
+    // BUG FIX: Pastikan warehouses loaded sebelum render selector
+    if (!warehouses || warehouses.length === 0) {
+        // Try to load warehouses if not ready
+        loadWarehouses().then(() => {
+            ensureWarehouseSelector();
+            finishOpenTransaksiPage();
+        }).catch(err => {
+            console.error('Gagal load warehouses:', err);
+            ensureWarehouseSelector(); // Tetap tampilkan dengan empty state
+            finishOpenTransaksiPage();
+        });
+    } else {
+        ensureWarehouseSelector();
+        finishOpenTransaksiPage();
+    }
+}
+function finishOpenTransaksiPage() {
+    // Restore selected warehouse dari sessionStorage jika ada
+    try {
+        const savedWarehouseId = sessionStorage.getItem('selectedWarehouseId');
+        if (savedWarehouseId && warehouses.some(w => w.id == savedWarehouseId)) {
+            selectedWarehouseId = parseInt(savedWarehouseId);
+        } else if (warehouses.length > 0 && !selectedWarehouseId) {
+            selectedWarehouseId = warehouses[0].id;
+        }
+    } catch (e) {
+        console.warn('Gagal restore selected warehouse:', e);
+    }
+    
     currentFilteredItems = [...kasirItems];
     renderProductList(currentFilteredItems);
     
     const barcodeInput = document.getElementById('barcode-input');
     if (barcodeInput) {
         barcodeInput.value = '';
-        // BUG FIX #11: Auto-focus after transaction
         setTimeout(() => barcodeInput.focus(), 100);
     }
     
@@ -2516,33 +2543,103 @@ function closeTransaksiPage() {
 
 function ensureWarehouseSelector() {
     const header = document.querySelector('.transaksi-header-right');
-    if (!header) return;
+    if (!header) {
+        console.warn('Element .transaksi-header-right tidak ditemukan');
+        return;
+    }
     
-    if (document.getElementById('warehouse-select')) return;
+    // Hapus select lama jika ada (untuk refresh data)
+    const existingSelect = document.getElementById('warehouse-select');
+    if (existingSelect) {
+        existingSelect.remove();
+    }
     
     const select = document.createElement('select');
     select.id = 'warehouse-select';
     select.className = 'form-input';
     select.style.width = '150px';
     select.style.marginRight = '10px';
+    select.setAttribute('aria-label', 'Pilih Gudang');
+    
+    // Event handler untuk perubahan gudang
     select.onchange = (e) => {
-        selectedWarehouseId = parseInt(e.target.value);
-        renderProductList();
+        const newWarehouseId = parseInt(e.target.value);
+        if (newWarehouseId && newWarehouseId !== selectedWarehouseId) {
+            selectedWarehouseId = newWarehouseId;
+            // Simpan ke sessionStorage untuk persistensi
+            try {
+                sessionStorage.setItem('selectedWarehouseId', selectedWarehouseId);
+            } catch (err) {}
+            // Refresh product list dengan stok gudang baru
+            renderProductList();
+            // Refresh cart display untuk update info batch
+            if (document.getElementById('cart-page')?.style.display === 'block') {
+                renderCartPage();
+            }
+        }
     };
     
-    warehouses.forEach(w => {
-        const option = document.createElement('option');
-        option.value = w.id;
-        option.textContent = w.name;
-        if (w.id === selectedWarehouseId) option.selected = true;
-        select.appendChild(option);
-    });
+    // BUG FIX: Populate options dari warehouses array
+    populateWarehouseSelect(select, selectedWarehouseId);
     
+    // Insert ke DOM
     const customerBtn = document.getElementById('customer-select-btn');
     if (customerBtn) {
         header.insertBefore(select, customerBtn);
     } else {
         header.prepend(select);
+    }
+}
+function populateWarehouseSelect(selectElement, selectedId) {
+    if (!selectElement) return;
+    
+    // Clear existing options
+    selectElement.innerHTML = '';
+    
+    // Default option
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = '-- Pilih Gudang --';
+    defaultOption.disabled = true;
+    defaultOption.selected = !selectedId;
+    selectElement.appendChild(defaultOption);
+    
+    // Populate dari warehouses array
+    if (!warehouses || warehouses.length === 0) {
+        // Tampilkan pesan loading/error
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'Memuat gudang...';
+        option.disabled = true;
+        selectElement.appendChild(option);
+        return;
+    }
+    
+    warehouses.forEach(w => {
+        // Skip gudang tidak aktif (opsional)
+        if (w.isActive === false) return;
+        
+        const option = document.createElement('option');
+        option.value = w.id;
+        // Sanitize output untuk cegah XSS
+        option.textContent = `${sanitizeInput(w.code)} - ${sanitizeInput(w.name)}`;
+        
+        if (selectedId && w.id == selectedId) {
+            option.selected = true;
+        }
+        selectElement.appendChild(option);
+    });
+    
+    // Disable select jika tidak ada gudang aktif
+    selectElement.disabled = warehouses.filter(w => w.isActive !== false).length === 0;
+}
+
+// BUG FIX: Fungsi untuk refresh warehouse selector setelah data load
+function refreshWarehouseSelector() {
+    const select = document.getElementById('warehouse-select');
+    if (select) {
+        const currentValue = select.value;
+        populateWarehouseSelect(select, currentValue ? parseInt(currentValue) : selectedWarehouseId);
     }
 }
 
@@ -5022,6 +5119,7 @@ async function initApp() {
         await loadBundles();
         
         await loadWarehouses();
+        refreshWarehouseSelector();
         await loadItemStocks();
         await loadItemBatches();
         await loadItemSerials();
@@ -5235,3 +5333,30 @@ window.addEventListener('beforeunload', () => {
         db = null;
     }
 });
+
+window.onWarehouseDataChanged = function() {
+    // Refresh dropdown jika halaman transaksi aktif
+    if (document.getElementById('transaksi-page')?.style.display === 'block') {
+        refreshWarehouseSelector();
+    }
+    // Update product list jika gudang berubah
+    if (selectedWarehouseId) {
+        renderProductList();
+    }
+};
+
+// Override fungsi saveWarehouse/deleteWarehouse untuk trigger refresh
+// (Jika fungsi ini ada di warehouse.js yang di-load terpisah)
+const originalSaveWarehouse = window.saveWarehouse;
+if (originalSaveWarehouse) {
+    window.saveWarehouse = async function(...args) {
+        const result = await originalSaveWarehouse.apply(this, args);
+        // Reload warehouses array
+        await loadWarehouses();
+        // Refresh UI
+        if (typeof refreshWarehouseSelector === 'function') {
+            refreshWarehouseSelector();
+        }
+        return result;
+    };
+}
