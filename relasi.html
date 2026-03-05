@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MUDA - Manajemen Relasi</title>
+    <style>
+        /* ==================== RESET & BASE ==================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            color: #333333;
+            padding: 20px;
+        }
+        /* ==================== UTILITY ==================== */
+        .icon {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+        }
+        .icon-sm {
+            width: 16px;
+            height: 16px;
+        }
+        .icon-primary {
+            color: #006B54;
+        }
+        .icon-white {
+            color: white;
+        }
+        .icon-danger {
+            color: #ff6b6b;
+        }
+        .action-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 15px;
+            border: 1px solid #006B54;
+            background: white;
+            color: #006B54;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            min-height: auto;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .action-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+        .action-btn.edit-btn:hover {
+            background: #006B54;
+            color: white;
+        }
+        .action-btn.delete-btn {
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+        }
+        .action-btn.delete-btn:hover {
+            background: #ff6b6b;
+            color: white;
+        }
+        .form-button-primary {
+            background: #006B54;
+            color: white;
+            border: 1px solid #006B54;
+            border-radius: 15px;
+            padding: 12px 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 1rem;
+            min-height: 48px;
+        }
+        .form-button-secondary {
+            background: #d9d9d9;
+            color: #333333;
+            border: 1px solid #d9d9d9;
+            border-radius: 15px;
+            padding: 12px 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 1rem;
+            min-height: 48px;
+        }
+        .form-button-primary:hover {
+            background: #005a46;
+        }
+        .form-button-secondary:hover {
+            background: #cccccc;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #333333 !important;
+            border-radius: 15px !important;
+            font-size: 1rem;
+            background: #FFFFFF !important;
+            color: #333333 !important;
+            transition: all 0.2s;
+        }
+        .form-input:focus {
+            border-color: #006B54 !important;
+            outline: none !important;
+            box-shadow: 0 0 0 3px rgba(0, 107, 84, 0.1) !important;
+        }
+        /* ==================== NOTIFICATION ==================== */
+        #notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 20px;
+            border-radius: 15px;
+            display: none;
+            color: white;
+            background-color: #006B54;
+            max-width: 90%;
+            text-align: center;
+            z-index: 1001;
+            font-size: 14px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        /* ==================== HEADER ==================== */
+        .app-header {
+            background: #FFFFFF;
+            color: #006B54;
+            padding: 16px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .app-header h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #006B54;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .back-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #006B54;
+            border-radius: 15px;
+            transition: background 0.2s;
+        }
+        .back-button:hover {
+            background: #f0f9f6;
+        }
+        .back-button svg {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        /* ==================== TAB NAVIGATION ==================== */
+        .tab-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 10px;
+            border-radius: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .tab-nav button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 15px;
+            background: #f5f5f5;
+            color: #333;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-nav button.active {
+            background: #006B54;
+            color: white;
+        }
+        /* ==================== PAGE CONTAINER ==================== */
+        .page {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .page.active {
+            display: block;
+        }
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .page-header h2 {
+            color: #006B54;
+            font-size: 1.5rem;
+            margin: 0;
+        }
+        .page-header .spacer {
+            flex: 1;
+        }
+        /* ==================== TABLES ==================== */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .data-table th {
+            background: #f5f5f5;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+        }
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        .data-table tr:hover {
+            background: #f9f9f9;
+        }
+        .table-container {
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        .table-container table {
+            min-width: 600px;
+        }
+        .table-container thead th {
+            position: sticky;
+            top: 0;
+            background: #f5f5f5;
+            z-index: 1;
+        }
+        /* ==================== FORM ==================== */
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        /* ==================== FILTER ==================== */
+        .filter-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .filter-row .search-input {
+            flex: 2;
+        }
+        .filter-row .level-select {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-header">
+        <button class="back-button" onclick="goBack()" title="Kembali ke POSPLUS">
+            <svg viewBox="0 0 24 24">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </button>
+        <h1>
+            <svg class="icon icon-primary" viewBox="0 0 24 24">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M5 20v-2a7 7 0 0 1 14 0v2"/>
+            </svg>
+            Manajemen Relasi
+        </h1>
+    </div>
+
+    <div class="tab-nav">
+        <button id="tab-customers" class="active" onclick="showPage('customers')">Pelanggan</button>
+        <button id="tab-suppliers" onclick="showPage('suppliers')">Supplier</button>
+    </div>
+
+    <!-- ==================== HALAMAN CUSTOMER LIST ==================== -->
+    <div id="customer-list-page" class="page active">
+        <div class="page-header">
+            <h2>Daftar Pelanggan</h2>
+            <div class="spacer"></div>
+            <button class="form-button-primary" onclick="showAddCustomerPage()">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="16"/>
+                    <line x1="8" y1="12" x2="16" y2="12"/>
+                </svg>
+                Tambah
+            </button>
+        </div>
+        <!-- Filter dan pencarian pelanggan -->
+        <div class="filter-row">
+            <input type="text" id="search-customer" class="form-input search-input" placeholder="Cari kode atau nama pelanggan..." oninput="filterCustomer()">
+            <select id="filter-customer-level" class="form-input level-select" onchange="filterCustomer()">
+                <option value="">Semua Level</option>
+                <option value="Bronze">Bronze</option>
+                <option value="Silver">Silver</option>
+                <option value="Gold">Gold</option>
+                <option value="Platinum">Platinum</option>
+            </select>
+        </div>
+        <div class="table-container" id="customer-list-container"></div>
+    </div>
+
+    <!-- ==================== HALAMAN CUSTOMER ADD/EDIT ==================== -->
+    <div id="customer-add-page" class="page">
+        <div class="page-header">
+            <h2 id="customer-page-title">Tambah Pelanggan</h2>
+        </div>
+        <form id="customer-form" onsubmit="event.preventDefault();">
+            <div class="form-group">
+                <label>Kode Pelanggan</label>
+                <input type="text" id="customer-code" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label>Nama Pelanggan</label>
+                <input type="text" id="customer-name" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label>Level Pelanggan</label>
+                <select id="customer-level" class="form-input">
+                    <option value="Bronze">Bronze</option>
+                    <option value="Silver">Silver</option>
+                    <option value="Gold">Gold</option>
+                    <option value="Platinum">Platinum</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Kontak (Telp/HP)</label>
+                <input type="text" id="customer-contact" class="form-input">
+            </div>
+            <div class="form-group">
+                <label>No Rekening</label>
+                <input type="text" id="customer-account" class="form-input">
+            </div>
+            <div class="form-group">
+                <label>Nama Bank</label>
+                <input type="text" id="customer-bank" class="form-input">
+            </div>
+            <div class="form-group">
+                <label>No Token Listrik</label>
+                <input type="text" id="customer-token" class="form-input">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="customer-email" class="form-input">
+            </div>
+            <div class="form-group">
+                <label>Alamat</label>
+                <textarea id="customer-address" class="form-input" rows="3"></textarea>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="form-button-secondary" onclick="showCustomerList()">Batal</button>
+                <button type="button" class="form-button-primary" onclick="saveCustomer()">Simpan</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- ==================== HALAMAN SUPPLIER LIST ==================== -->
+    <div id="supplier-list-page" class="page">
+        <div class="page-header">
+            <h2>Daftar Supplier</h2>
+            <div class="spacer"></div>
+            <button class="form-button-primary" onclick="showAddSupplierPage()">
+                <svg class="icon" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="16"/>
+                    <line x1="8" y1="12" x2="16" y2="12"/>
+                </svg>
+                Tambah
+            </button>
+        </div>
+        <!-- Pencarian supplier -->
+        <div style="margin-bottom: 15px;">
+            <input type="text" id="search-supplier" class="form-input" placeholder="Cari kode atau nama supplier..." style="width:100%;" oninput="filterSupplier()">
+        </div>
+        <div class="table-container" id="supplier-list-container"></div>
+    </div>
+
+    <!-- ==================== HALAMAN SUPPLIER ADD/EDIT ==================== -->
+    <div id="supplier-add-page" class="page">
+        <div class="page-header">
+            <h2 id="supplier-page-title">Tambah Supplier</h2>
+        </div>
+        <form id="supplier-form" onsubmit="event.preventDefault();">
+            <div class="form-group">
+                <label>Kode Supplier</label>
+                <input type="text" id="supplier-code" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label>Nama Supplier</label>
+                <input type="text" id="supplier-name" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label>Kontak (Telp/HP)</label>
+                <input type="text" id="supplier-contact" class="form-input">
+            </div>
+            <div class="form-group">
+                <label>Alamat</label>
+                <textarea id="supplier-address" class="form-input" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="supplier-email" class="form-input">
+            </div>
+            <div class="form-group">
+                <label>No Rekening</label>
+                <input type="text" id="supplier-account" class="form-input">
+            </div>
+            <div class="form-group">
+                <label>Nama Bank</label>
+                <input type="text" id="supplier-bank" class="form-input">
+            </div>
+            <div class="form-actions">
+                <button type="button" class="form-button-secondary" onclick="showSupplierList()">Batal</button>
+                <button type="button" class="form-button-primary" onclick="saveSupplier()">Simpan</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="notification"></div>
+
+    <script>
+        // ==================== GLOBAL VARIABLES ====================
+        let db = null;
+        let customers = [];
+        let suppliers = [];
+        let editingCustomerId = null;
+        let editingSupplierId = null;
+
+        const DB_NAME = 'POSKasirDB';
+        const DB_VERSION = 21;
+        const STORES = {
+            CUSTOMERS: 'customers',
+            SUPPLIERS: 'suppliers'
+        };
+
+        // ==================== FILTER VARIABLES ====================
+        let searchCustomerText = '';
+        let filterCustomerLevel = '';
+        let searchSupplierText = '';
+
+        // ==================== DATABASE FUNCTIONS ====================
+        async function initDatabase() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onerror = () => reject(request.error);
+                request.onsuccess = (event) => {
+                    db = event.target.result;
+                    resolve();
+                };
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains(STORES.CUSTOMERS)) {
+                        db.createObjectStore(STORES.CUSTOMERS, { keyPath: 'id', autoIncrement: true });
+                    }
+                    if (!db.objectStoreNames.contains(STORES.SUPPLIERS)) {
+                        db.createObjectStore(STORES.SUPPLIERS, { keyPath: 'id', autoIncrement: true });
+                    }
+                };
+            });
+        }
+
+        async function dbGetAll(storeName) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(storeName, 'readonly');
+                const store = tx.objectStore(storeName);
+                const request = store.getAll();
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function dbPut(storeName, data) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(storeName, 'readwrite');
+                const store = tx.objectStore(storeName);
+                const request = store.put(data);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function dbAdd(storeName, data) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(storeName, 'readwrite');
+                const store = tx.objectStore(storeName);
+                const request = store.add(data);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        async function dbDelete(storeName, key) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(storeName, 'readwrite');
+                const store = tx.objectStore(storeName);
+                const request = store.delete(key);
+                request.onsuccess = () => resolve();
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        // ==================== LOAD DATA ====================
+        async function loadCustomers() {
+            customers = await dbGetAll(STORES.CUSTOMERS);
+            customers.sort((a, b) => a.name.localeCompare(b.name));
+        }
+
+        async function loadSuppliers() {
+            suppliers = await dbGetAll(STORES.SUPPLIERS);
+            suppliers.sort((a, b) => a.name.localeCompare(b.name));
+        }
+
+        // ==================== NOTIFICATION ====================
+        function showNotification(message, type = 'info') {
+            const notif = document.getElementById('notification');
+            notif.textContent = message;
+            notif.style.backgroundColor = type === 'error' ? '#dc3545' : (type === 'success' ? '#006B54' : '#17a2b8');
+            notif.style.display = 'block';
+            setTimeout(() => { notif.style.display = 'none'; }, 2000);
+        }
+
+        function formatRupiah(angka) {
+            return 'Rp ' + angka.toLocaleString('id-ID');
+        }
+
+        // ==================== FILTER FUNCTIONS ====================
+        function filterCustomer() {
+            searchCustomerText = document.getElementById('search-customer').value.toLowerCase().trim();
+            filterCustomerLevel = document.getElementById('filter-customer-level').value;
+            renderCustomerList();
+        }
+
+        function filterSupplier() {
+            searchSupplierText = document.getElementById('search-supplier').value.toLowerCase().trim();
+            renderSupplierList();
+        }
+
+        // ==================== PAGE NAVIGATION ====================
+        function showPage(page) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-nav button').forEach(btn => btn.classList.remove('active'));
+
+            if (page === 'customers') {
+                document.getElementById('customer-list-page').classList.add('active');
+                document.getElementById('tab-customers').classList.add('active');
+                filterCustomer(); // render dengan filter
+            } else if (page === 'suppliers') {
+                document.getElementById('supplier-list-page').classList.add('active');
+                document.getElementById('tab-suppliers').classList.add('active');
+                filterSupplier(); // render dengan filter
+            }
+        }
+
+        function showAddCustomerPage() {
+            editingCustomerId = null;
+            document.getElementById('customer-page-title').textContent = 'Tambah Pelanggan';
+            document.getElementById('customer-code').value = '';
+            document.getElementById('customer-name').value = '';
+            document.getElementById('customer-level').value = 'Bronze';
+            document.getElementById('customer-contact').value = '';
+            document.getElementById('customer-account').value = '';
+            document.getElementById('customer-bank').value = '';
+            document.getElementById('customer-token').value = '';
+            document.getElementById('customer-email').value = '';
+            document.getElementById('customer-address').value = '';
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('customer-add-page').classList.add('active');
+        }
+
+        function showEditCustomerPage(id) {
+            const cust = customers.find(c => c.id === id);
+            if (!cust) return;
+            editingCustomerId = id;
+            document.getElementById('customer-page-title').textContent = 'Edit Pelanggan';
+            document.getElementById('customer-code').value = cust.code || '';
+            document.getElementById('customer-name').value = cust.name || '';
+            document.getElementById('customer-level').value = cust.level || 'Bronze';
+            document.getElementById('customer-contact').value = cust.contact || '';
+            document.getElementById('customer-account').value = cust.accountNumber || '';
+            document.getElementById('customer-bank').value = cust.bankName || '';
+            document.getElementById('customer-token').value = cust.token || '';
+            document.getElementById('customer-email').value = cust.email || '';
+            document.getElementById('customer-address').value = cust.address || '';
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('customer-add-page').classList.add('active');
+        }
+
+        function showCustomerList() {
+            showPage('customers');
+        }
+
+        function showAddSupplierPage() {
+            editingSupplierId = null;
+            document.getElementById('supplier-page-title').textContent = 'Tambah Supplier';
+            document.getElementById('supplier-code').value = '';
+            document.getElementById('supplier-name').value = '';
+            document.getElementById('supplier-contact').value = '';
+            document.getElementById('supplier-address').value = '';
+            document.getElementById('supplier-email').value = '';
+            document.getElementById('supplier-account').value = '';
+            document.getElementById('supplier-bank').value = '';
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('supplier-add-page').classList.add('active');
+        }
+
+        function showEditSupplierPage(id) {
+            const sup = suppliers.find(s => s.id === id);
+            if (!sup) return;
+            editingSupplierId = id;
+            document.getElementById('supplier-page-title').textContent = 'Edit Supplier';
+            document.getElementById('supplier-code').value = sup.code || '';
+            document.getElementById('supplier-name').value = sup.name || '';
+            document.getElementById('supplier-contact').value = sup.contact || '';
+            document.getElementById('supplier-address').value = sup.address || '';
+            document.getElementById('supplier-email').value = sup.email || '';
+            document.getElementById('supplier-account').value = sup.accountNumber || '';
+            document.getElementById('supplier-bank').value = sup.bankName || '';
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('supplier-add-page').classList.add('active');
+        }
+
+        function showSupplierList() {
+            showPage('suppliers');
+        }
+
+        function goBack() {
+            window.location.href = 'index.html';
+        }
+
+        // ==================== RENDER TABLES ====================
+        function renderCustomerList() {
+            const container = document.getElementById('customer-list-container');
+            if (!container) return;
+
+            // Filter data berdasarkan pencarian dan level
+            const filtered = customers.filter(c => {
+                const codeMatch = (c.code || '').toLowerCase().includes(searchCustomerText);
+                const nameMatch = (c.name || '').toLowerCase().includes(searchCustomerText);
+                const levelMatch = filterCustomerLevel === '' || (c.level || 'Bronze') === filterCustomerLevel;
+                return (codeMatch || nameMatch) && levelMatch;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<p style="text-align:center; padding:20px;">Tidak ada pelanggan yang cocok.</p>';
+                return;
+            }
+
+            let html = '<table class="data-table"><thead><tr><th>Kode</th><th>Nama</th><th>Level</th><th>Kontak</th><th>Piutang</th><th>Aksi</th></tr></thead><tbody>';
+            filtered.forEach(c => {
+                html += `<tr>
+                    <td>${c.code || '-'}</td>
+                    <td>${c.name}</td>
+                    <td>${c.level || 'Bronze'}</td>
+                    <td>${c.contact || '-'}</td>
+                    <td>${formatRupiah(c.outstanding || 0)}</td>
+                    <td>
+                        <button class="action-btn edit-btn" onclick="showEditCustomerPage(${c.id})">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                        </button>
+                        <button class="action-btn delete-btn" onclick="deleteCustomer(${c.id})">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                <line x1="10" y1="11" x2="10" y2="17"/>
+                                <line x1="14" y1="11" x2="14" y2="17"/>
+                            </svg>
+                        </button>
+                    </td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function renderSupplierList() {
+            const container = document.getElementById('supplier-list-container');
+            if (!container) return;
+
+            // Filter data berdasarkan pencarian
+            const filtered = suppliers.filter(s => {
+                const codeMatch = (s.code || '').toLowerCase().includes(searchSupplierText);
+                const nameMatch = (s.name || '').toLowerCase().includes(searchSupplierText);
+                return codeMatch || nameMatch;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<p style="text-align:center; padding:20px;">Tidak ada supplier yang cocok.</p>';
+                return;
+            }
+
+            let html = '<table class="data-table"><thead><tr><th>Kode</th><th>Nama</th><th>Kontak</th><th>Email</th><th>Aksi</th></tr></thead><tbody>';
+            filtered.forEach(s => {
+                html += `<tr>
+                    <td>${s.code || '-'}</td>
+                    <td>${s.name}</td>
+                    <td>${s.contact || '-'}</td>
+                    <td>${s.email || '-'}</td>
+                    <td>
+                        <button class="action-btn edit-btn" onclick="showEditSupplierPage(${s.id})">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                        </button>
+                        <button class="action-btn delete-btn" onclick="deleteSupplier(${s.id})">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                <line x1="10" y1="11" x2="10" y2="17"/>
+                                <line x1="14" y1="11" x2="14" y2="17"/>
+                            </svg>
+                        </button>
+                    </td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // ==================== CRUD CUSTOMER ====================
+        async function saveCustomer() {
+            const code = document.getElementById('customer-code').value.trim();
+            const name = document.getElementById('customer-name').value.trim();
+            const level = document.getElementById('customer-level').value;
+            const contact = document.getElementById('customer-contact').value.trim();
+            const accountNumber = document.getElementById('customer-account').value.trim();
+            const bankName = document.getElementById('customer-bank').value.trim();
+            const token = document.getElementById('customer-token').value.trim();
+            const email = document.getElementById('customer-email').value.trim();
+            const address = document.getElementById('customer-address').value.trim();
+
+            if (!code || !name) {
+                showNotification('Kode dan Nama harus diisi', 'error');
+                return;
+            }
+
+            const duplicate = customers.find(c => c.code === code && c.id !== editingCustomerId);
+            if (duplicate) {
+                showNotification('Kode pelanggan sudah digunakan', 'error');
+                return;
+            }
+
+            const now = new Date().toISOString();
+            try {
+                if (editingCustomerId) {
+                    const cust = customers.find(c => c.id === editingCustomerId);
+                    if (cust) {
+                        cust.code = code;
+                        cust.name = name;
+                        cust.level = level;
+                        cust.contact = contact;
+                        cust.accountNumber = accountNumber;
+                        cust.bankName = bankName;
+                        cust.token = token;
+                        cust.email = email;
+                        cust.address = address;
+                        cust.updatedAt = now;
+                        await dbPut(STORES.CUSTOMERS, cust);
+                    }
+                } else {
+                    const newCust = {
+                        code, name, level, contact, accountNumber, bankName, token, email, address,
+                        outstanding: 0,
+                        createdAt: now,
+                        updatedAt: now
+                    };
+                    await dbAdd(STORES.CUSTOMERS, newCust);
+                }
+                await loadCustomers();
+                showNotification('Pelanggan berhasil disimpan', 'success');
+                showCustomerList();
+                filterCustomer(); // terapkan filter setelah kembali ke daftar
+            } catch (error) {
+                showNotification('Gagal menyimpan: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteCustomer(id) {
+            if (!confirm('Hapus pelanggan ini?')) return;
+            try {
+                await dbDelete(STORES.CUSTOMERS, id);
+                customers = customers.filter(c => c.id !== id);
+                filterCustomer(); // render ulang dengan filter
+                showNotification('Pelanggan dihapus', 'success');
+            } catch (error) {
+                showNotification('Gagal hapus: ' + error.message, 'error');
+            }
+        }
+
+        // ==================== CRUD SUPPLIER ====================
+        async function saveSupplier() {
+            const code = document.getElementById('supplier-code').value.trim();
+            const name = document.getElementById('supplier-name').value.trim();
+            const contact = document.getElementById('supplier-contact').value.trim();
+            const address = document.getElementById('supplier-address').value.trim();
+            const email = document.getElementById('supplier-email').value.trim();
+            const accountNumber = document.getElementById('supplier-account').value.trim();
+            const bankName = document.getElementById('supplier-bank').value.trim();
+
+            if (!code || !name) {
+                showNotification('Kode dan Nama harus diisi', 'error');
+                return;
+            }
+
+            const duplicate = suppliers.find(s => s.code === code && s.id !== editingSupplierId);
+            if (duplicate) {
+                showNotification('Kode supplier sudah digunakan', 'error');
+                return;
+            }
+
+            const now = new Date().toISOString();
+            try {
+                if (editingSupplierId) {
+                    const sup = suppliers.find(s => s.id === editingSupplierId);
+                    if (sup) {
+                        sup.code = code;
+                        sup.name = name;
+                        sup.contact = contact;
+                        sup.address = address;
+                        sup.email = email;
+                        sup.accountNumber = accountNumber;
+                        sup.bankName = bankName;
+                        sup.updatedAt = now;
+                        await dbPut(STORES.SUPPLIERS, sup);
+                    }
+                } else {
+                    const newSup = {
+                        code, name, contact, address, email, accountNumber, bankName,
+                        createdAt: now,
+                        updatedAt: now
+                    };
+                    await dbAdd(STORES.SUPPLIERS, newSup);
+                }
+                await loadSuppliers();
+                showNotification('Supplier berhasil disimpan', 'success');
+                showSupplierList();
+                filterSupplier(); // terapkan filter setelah kembali ke daftar
+            } catch (error) {
+                showNotification('Gagal menyimpan: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteSupplier(id) {
+            if (!confirm('Hapus supplier ini?')) return;
+            try {
+                await dbDelete(STORES.SUPPLIERS, id);
+                suppliers = suppliers.filter(s => s.id !== id);
+                filterSupplier(); // render ulang dengan filter
+                showNotification('Supplier dihapus', 'success');
+            } catch (error) {
+                showNotification('Gagal hapus: ' + error.message, 'error');
+            }
+        }
+
+        // ==================== INIT ====================
+        async function init() {
+            try {
+                await initDatabase();
+                await loadCustomers();
+                await loadSuppliers();
+                showPage('customers');
+            } catch (error) {
+                showNotification('Gagal memuat data: ' + error.message, 'error');
+            }
+        }
+
+        init();
+
+        // ==================== HASH CHANGE (untuk direct link) ====================
+        window.addEventListener('hashchange', () => {
+            const hash = window.location.hash.substring(1);
+            if (hash === 'customer-add') showAddCustomerPage();
+            else if (hash === 'supplier-add') showAddSupplierPage();
+            else if (hash === 'suppliers') showPage('suppliers');
+            else showPage('customers');
+        });
+
+        if (window.location.hash) {
+            window.dispatchEvent(new Event('hashchange'));
+        }
+    </script>
+</body>
+</html>
