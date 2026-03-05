@@ -2205,6 +2205,7 @@ function showEditItemPage(itemId) {
 
 // ==================== FUNGSI SAVE ITEM (DIPERBAIKI) ====================
 async function saveKasirItemFromPage() {
+    // Pastikan editingItemId dalam format number
     if (editingItemId) {
         editingItemId = Number(editingItemId);
     }
@@ -2230,11 +2231,12 @@ async function saveKasirItemFromPage() {
         return;
     }
     
-    // Cek duplikat KECUALI untuk record yang sedang diedit
-    const duplicate = kasirItems.find(i => 
-        i.code === code && 
-        i.id !== editingItemId
-    );
+    // PERBAIKAN: Cek duplikat dengan konversi tipe data yang tepat
+    const duplicate = kasirItems.find(i => {
+        const itemId = Number(i.id);
+        const editId = editingItemId ? Number(editingItemId) : null;
+        return i.code === code && itemId !== editId;
+    });
     
     if (duplicate) {
         showNotification(`Kode "${code}" sudah digunakan!`, 'error');
@@ -2260,29 +2262,34 @@ async function saveKasirItemFromPage() {
     
     try {
         if (editingItemId) {
-            // MODE EDIT - Update data existing
+            // MODE EDIT - Ambil data dari database
             const item = await dbGet(STORES.KASIR_ITEMS, editingItemId);
             if (!item) throw new Error('Item tidak ditemukan');
+            
             Object.assign(item, {
                 name, code, barcode, categoryId, hargaDasar, hargaJual, berat, satuanId,
                 diskon, stock, minStock, isWeighable, track_batch, track_serial,
                 priceLevels, unitConversions,
                 updatedAt: now
             });
+            
             await dbPut(STORES.KASIR_ITEMS, item);
+            showNotification('Item berhasil diupdate', 'success');
         } else {
-            // MODE TAMBAH - Create data baru
+            // MODE TAMBAH
             const newItem = {
                 name, code, barcode, categoryId, hargaDasar, hargaJual, berat, satuanId,
                 diskon, stock, minStock, isWeighable, track_batch, track_serial,
                 priceLevels, unitConversions,
-                createdAt: now, updatedAt: now
+                createdAt: now,
+                updatedAt: now
             };
+            
             await dbAdd(STORES.KASIR_ITEMS, newItem);
+            showNotification('Item berhasil ditambahkan', 'success');
         }
         
         await loadKasirItems();
-        showNotification('Item berhasil disimpan', 'success');
         navigateTo('listItems');
     } catch (error) {
         showNotification('Gagal menyimpan: ' + error.message, 'error');
