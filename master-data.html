@@ -12,7 +12,6 @@
             padding: 0;
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
-            /* user-select: none;  -- Dihapus agar teks bisa dipilih */
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
@@ -201,6 +200,8 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            flex-wrap: wrap;
+            justify-content: space-between;
         }
         .back-button {
             background: none;
@@ -339,6 +340,10 @@
         .action-btn.edit-btn:hover {
             background: #006B54;
             color: white;
+        }
+        /* ==================== SEARCH BOX ==================== */
+        .search-box {
+            margin-bottom: 15px;
         }
         /* ==================== MODAL OVERLAY ==================== */
         .modal-overlay {
@@ -860,7 +865,7 @@
     <script>
         // ==================== KONFIGURASI DATABASE ====================
         const DB_NAME = 'POSKasirDB';
-        const DB_VERSION = 22; // Dinaikkan untuk perbaikan struktur
+        const DB_VERSION = 22;
         const STORES = {
             SETTINGS: 'settings',
             APP_STATE: 'appState',
@@ -905,10 +910,9 @@
         let editingBOMId = null;
 
         let tempUnitConversions = [];
-        let editingConversionIndex = -1; // -1 berarti tambah baru, >=0 berarti edit
+        let editingConversionIndex = -1;
 
-        // Untuk modal pilih item
-        let selectItemCallback = null; // function(item) untuk menerima hasil pilihan
+        let selectItemCallback = null;
 
         // ==================== FUNGSI DRAWER ====================
         function toggleDrawer() {
@@ -973,7 +977,6 @@
                     const db = e.target.result;
                     const tx = e.target.transaction;
 
-                    // Buat store jika belum ada
                     if (!db.objectStoreNames.contains(STORES.SETTINGS)) {
                         db.createObjectStore(STORES.SETTINGS, { keyPath: 'key' });
                     }
@@ -985,7 +988,6 @@
                         const itemStore = db.createObjectStore(STORES.KASIR_ITEMS, { keyPath: 'id', autoIncrement: true });
                         itemStore.createIndex('code', 'code', { unique: true });
                     } else {
-                        // Migrasi: tambahkan field baru jika belum ada
                         const itemStore = tx.objectStore(STORES.KASIR_ITEMS);
                         itemStore.openCursor().onsuccess = (ev) => {
                             const cursor = ev.target.result;
@@ -1036,7 +1038,6 @@
                     if (!db.objectStoreNames.contains(STORES.BUNDLES)) {
                         db.createObjectStore(STORES.BUNDLES, { keyPath: 'id', autoIncrement: true });
                     }
-                    // Store baru untuk BOM
                     if (!db.objectStoreNames.contains(STORES.BILL_OF_MATERIALS)) {
                         const bomStore = db.createObjectStore(STORES.BILL_OF_MATERIALS, { keyPath: 'id', autoIncrement: true });
                         bomStore.createIndex('product_id', 'product_id', { unique: true });
@@ -1241,7 +1242,6 @@
                 </div>
             `;
             document.getElementById('master-content').innerHTML = html;
-            // Tambahkan satu baris komponen default
             addBOMComponentRow();
         }
 
@@ -1269,7 +1269,6 @@
 
         async function addBOMComponentRow(itemId = '', qty = 1, unitConvId = '') {
             const container = document.getElementById('bom-components-container');
-            const rowIndex = container.children.length; // Tidak dipakai tapi bisa untuk debugging
             const items = kasirItems;
             let itemOptions = '<option value="">-- Pilih Item --</option>';
             items.forEach(it => {
@@ -1294,7 +1293,6 @@
                     const unitSelect = row.querySelector('.component-unit');
                     const satuan = kasirSatuan;
                     item.unitConversions.forEach(conv => {
-                        // Pastikan conv memiliki id unik, jika tidak buat id sementara
                         const convId = conv.id || `temp-${Math.random()}`;
                         const unitName = satuan.find(s => s.id == conv.unit)?.name || '?';
                         unitSelect.innerHTML += `<option value="${convId}" ${convId == unitConvId ? 'selected' : ''}>${unitName} (${conv.value})</option>`;
@@ -1456,33 +1454,57 @@
             document.getElementById('bom-view-modal').style.display = 'none';
         }
 
-        // ==================== FUNGSI ITEM ====================
+        // ==================== FUNGSI ITEM (DENGAN PENCARIAN) ====================
         function showItemListPage() {
-            const items = kasirItems;
-            let rows = '';
-            items.forEach(item => {
-                const category = kasirCategories.find(c => c.id === item.categoryId);
-                const catName = category ? category.name : '-';
-                rows += `
-                    <tr>
-                        <td>${item.code}</td>
-                        <td>${item.name}</td>
-                        <td>${catName}</td>
-                        <td>${formatRupiah(item.hargaJual || 0)}</td>
-                        <td>${item.stock || 0}</td>
-                        <td>
-                            <button class="action-btn edit-btn" onclick="navigateTo('editItem', ${item.id})">✏️</button>
-                            <button class="action-btn delete-btn" onclick="deleteItemPrompt(${item.id})">🗑️</button>
-                        </td>
-                    </tr>
-                `;
-            });
+            const allItems = kasirItems;
+            const container = document.getElementById('master-content');
+
+            function renderItems(filterText = '') {
+                const lowerFilter = filterText.toLowerCase();
+                const filtered = allItems.filter(item => {
+                    // Cari di nama, kode, barcode item
+                    if (item.name.toLowerCase().includes(lowerFilter)) return true;
+                    if (item.code.toLowerCase().includes(lowerFilter)) return true;
+                    if (item.barcode && item.barcode.toLowerCase().includes(lowerFilter)) return true;
+                    // Cari di barcode konversi satuan
+                    if (item.unitConversions && item.unitConversions.some(conv => conv.barcode && conv.barcode.toLowerCase().includes(lowerFilter))) return true;
+                    return false;
+                });
+
+                let rows = '';
+                filtered.forEach(item => {
+                    const category = kasirCategories.find(c => c.id === item.categoryId);
+                    const catName = category ? category.name : '-';
+                    rows += `
+                        <tr>
+                            <td>${item.code}</td>
+                            <td>${item.name}</td>
+                            <td>${catName}</td>
+                            <td>${formatRupiah(item.hargaJual || 0)}</td>
+                            <td>${item.stock || 0}</td>
+                            <td>
+                                <button class="action-btn edit-btn" onclick="navigateTo('editItem', ${item.id})">✏️</button>
+                                <button class="action-btn delete-btn" onclick="deleteItemPrompt(${item.id})">🗑️</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                const tbody = document.getElementById('items-tbody');
+                if (tbody) {
+                    tbody.innerHTML = rows || '<tr><td colspan="6" style="text-align:center;">Tidak ada item yang cocok</td></tr>';
+                }
+            }
+
             const html = `
                 <div class="content-card">
                     <h2 class="page-title">
                         Daftar Item
-                        <button class="form-button-primary" style="margin-left:auto;" onclick="navigateTo('addItem')">+ Tambah Item</button>
+                        <button class="form-button-primary" onclick="navigateTo('addItem')">+ Tambah Item</button>
                     </h2>
+                    <div class="search-box">
+                        <input type="text" id="search-items" class="form-input" placeholder="Cari nama, kode, barcode item, barcode satuan...">
+                    </div>
                     <div class="table-responsive">
                         <table class="data-table">
                             <thead>
@@ -1495,21 +1517,23 @@
                                     <th>Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                ${rows || '<tr><td colspan="6" style="text-align:center;">Belum ada item</td></tr>'}
+                            <tbody id="items-tbody">
+                                <!-- akan diisi oleh javascript -->
                             </tbody>
                         </table>
                     </div>
                 </div>
             `;
-            document.getElementById('master-content').innerHTML = html;
+            container.innerHTML = html;
+
+            const searchInput = document.getElementById('search-items');
+            searchInput.addEventListener('input', (e) => renderItems(e.target.value));
+            renderItems(''); // tampilkan semua
         }
 
         async function deleteItemPrompt(id) {
             if (confirm('Hapus item ini? Semua data terkait (stok, batch, dll) akan ikut terhapus.')) {
                 try {
-                    // Periksa apakah item digunakan di BOM atau bundle?
-                    // Untuk sederhana, langsung hapus
                     await dbDelete(STORES.KASIR_ITEMS, id);
                     await loadKasirItems();
                     showNotification('Item dihapus', 'success');
@@ -1520,481 +1544,47 @@
             }
         }
 
-        function showAddItemPage() {
-            editingItemId = null;
-            tempUnitConversions = [];
-            const html = `
-                <div class="content-card">
-                    <h2 class="page-title">
-                        <button class="back-button" onclick="navigateTo('listItems')" title="Kembali ke Daftar Item">
-                            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
-                                <line x1="19" y1="12" x2="5" y2="12"></line>
-                                <polyline points="12 19 5 12 12 5"></polyline>
-                            </svg>
-                        </button>
-                        Tambah Item Baru
-                    </h2>
-                    <form id="item-form" onsubmit="event.preventDefault();">
-                        <div class="form-group">
-                            <label>Nama Item *</label>
-                            <input type="text" id="kasir-item-name" class="form-input" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Kode Item *</label>
-                            <input type="text" id="kasir-item-code" class="form-input" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Barcode Item</label>
-                            <input type="text" id="kasir-item-barcode" class="form-input">
-                        </div>
-                        <div class="form-group">
-                            <label>Kategori Kasir</label>
-                            <select id="kasir-item-category" class="form-input">
-                                <option value="">-- Pilih Kategori --</option>
-                                ${kasirCategories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('')}
-                            </select>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Harga Dasar</label>
-                                <input type="number" id="kasir-item-harga-dasar" class="form-input" min="0" step="0.01">
-                            </div>
-                            <div class="form-group">
-                                <label>Harga Jual</label>
-                                <input type="number" id="kasir-item-harga-jual" class="form-input" min="0" step="0.01">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Berat</label>
-                                <input type="number" id="kasir-item-berat" class="form-input" min="0" step="0.01">
-                            </div>
-                            <div class="form-group">
-                                <label>Satuan Dasar</label>
-                                <select id="kasir-item-satuan" class="form-input">
-                                    <option value="">-- Pilih Satuan --</option>
-                                    ${kasirSatuan.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Diskon (%) *opsional</label>
-                            <input type="number" id="kasir-item-diskon" class="form-input" min="0" max="100" step="0.1">
-                        </div>
-                        <div class="form-group">
-                            <label>Stok Awal</label>
-                            <input type="number" id="kasir-item-stock" class="form-input" min="0" value="0" step="any">
-                        </div>
-                        <div class="form-group">
-                            <label>Stok Minimal</label>
-                            <input type="number" id="kasir-item-min-stock" class="form-input" min="0" value="5" step="any">
-                            <small>Jika stok di bawah angka ini, akan muncul notifikasi</small>
-                        </div>
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="kasir-item-weighable"> Produk Timbangan (harga per kg)
-                            </label>
-                        </div>
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="kasir-item-track-batch"> Lacak Batch (Expiry Date)
-                            </label>
-                        </div>
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="kasir-item-track-serial"> Lacak Serial Number
-                            </label>
-                        </div>
-                        <div class="conversions-section">
-                            <label style="font-weight:500;">Konversi Satuan</label>
-                            <button type="button" id="add-conversion-btn" onclick="showConversionModal()">
-                                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="1.5">
-                                    <circle cx="12" cy="12" r="10"/>
-                                    <line x1="12" y1="8" x2="12" y2="16"/>
-                                    <line x1="8" y1="12" x2="16" y2="12"/>
-                                </svg>
-                                Tambah Konversi Satuan
-                            </button>
-                            <div id="conversions-list" class="conversions-list"></div>
-                        </div>
-                        <div class="form-group">
-                            <label>Level Harga (Qty Break)</label>
-                            <div class="level-harga-container" id="level-harga-container"></div>
-                            <button type="button" class="btn-add-level" onclick="addLevelRow()">
-                                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.5">
-                                    <circle cx="12" cy="12" r="10"/>
-                                    <line x1="12" y1="8" x2="12" y2="16"/>
-                                    <line x1="8" y1="12" x2="16" y2="12"/>
-                                </svg>
-                                Tambah Level
-                            </button>
-                        </div>
-                        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
-                            <button type="button" class="form-button-secondary" onclick="navigateTo('listItems')">Batal</button>
-                            <button type="button" class="form-button-primary" onclick="saveKasirItemFromPage()">Simpan</button>
-                        </div>
-                    </form>
-                </div>
-            `;
-            document.getElementById('master-content').innerHTML = html;
-            // Inisialisasi level harga
-            const levelContainer = document.getElementById('level-harga-container');
-            levelContainer.innerHTML = '';
-            addLevelRow(); // Baris kosong untuk diisi
-            renderConversionsList();
-        }
-
-        function showEditItemPage(itemId) {
-            const item = kasirItems.find(i => i.id === itemId);
-            if (!item) {
-                showNotification('Item tidak ditemukan', 'error');
-                navigateTo('listItems');
-                return;
-            }
-            editingItemId = itemId;
-            tempUnitConversions = item.unitConversions ? JSON.parse(JSON.stringify(item.unitConversions)) : [];
-            // Pastikan setiap konversi memiliki id unik
-            tempUnitConversions = tempUnitConversions.map((conv, idx) => {
-                if (!conv.id) conv.id = idx + 1; // atau generate id sementara
-                return conv;
-            });
-
-            showAddItemPage(); // Ini akan mereset tampilan, tapi kita akan isi setelahnya
-
-            // Tunggu sampai DOM terupdate (gunakan setTimeout)
-            setTimeout(() => {
-                document.getElementById('kasir-item-name').value = item.name || '';
-                document.getElementById('kasir-item-code').value = item.code || '';
-                document.getElementById('kasir-item-barcode').value = item.barcode || item.code || '';
-                document.getElementById('kasir-item-category').value = item.categoryId || '';
-                document.getElementById('kasir-item-harga-dasar').value = item.hargaDasar || '';
-                document.getElementById('kasir-item-harga-jual').value = item.hargaJual || '';
-                document.getElementById('kasir-item-berat').value = item.berat || '';
-                document.getElementById('kasir-item-satuan').value = item.satuanId || '';
-                document.getElementById('kasir-item-diskon').value = item.diskon || '';
-                document.getElementById('kasir-item-stock').value = item.stock || 0;
-                document.getElementById('kasir-item-min-stock').value = item.minStock || 5;
-                document.getElementById('kasir-item-weighable').checked = item.isWeighable || false;
-                document.getElementById('kasir-item-track-batch').checked = item.track_batch || false;
-                document.getElementById('kasir-item-track-serial').checked = item.track_serial || false;
-
-                const levelContainer = document.getElementById('level-harga-container');
-                levelContainer.innerHTML = '';
-                if (item.priceLevels && item.priceLevels.length > 0) {
-                    item.priceLevels.forEach(l => addLevelRow(l.minQty, l.price));
-                } else {
-                    addLevelRow();
-                }
-
-                renderConversionsList();
-            }, 0);
-        }
-
-        async function saveKasirItemFromPage() {
-            if (editingItemId) {
-                editingItemId = Number(editingItemId);
-            }
-            const name = document.getElementById('kasir-item-name').value.trim();
-            const code = document.getElementById('kasir-item-code').value.trim();
-            const barcode = document.getElementById('kasir-item-barcode').value.trim() || code;
-            const categoryId = document.getElementById('kasir-item-category').value ? parseInt(document.getElementById('kasir-item-category').value) : null;
-            const hargaDasar = parseFloat(document.getElementById('kasir-item-harga-dasar').value) || null;
-            const hargaJual = parseFloat(document.getElementById('kasir-item-harga-jual').value) || null;
-            const berat = parseFloat(document.getElementById('kasir-item-berat').value) || null;
-            const satuanId = document.getElementById('kasir-item-satuan').value ? parseInt(document.getElementById('kasir-item-satuan').value) : null;
-            const diskon = parseFloat(document.getElementById('kasir-item-diskon').value) || null;
-            const stock = parseFloat(document.getElementById('kasir-item-stock').value) || 0;
-            const minStock = parseFloat(document.getElementById('kasir-item-min-stock').value) || 5;
-            const isWeighable = document.getElementById('kasir-item-weighable').checked;
-            const track_batch = document.getElementById('kasir-item-track-batch').checked;
-            const track_serial = document.getElementById('kasir-item-track-serial').checked;
-
-            const priceLevels = getPriceLevelsFromDOM();
-
-            if (!name || !code) {
-                showNotification('Nama dan kode harus diisi!', 'error');
-                return;
-            }
-
-            // Validasi duplikat kode
-            const duplicate = kasirItems.find(i => i.code === code && i.id !== editingItemId);
-            if (duplicate) {
-                showNotification(`Kode "${code}" sudah digunakan!`, 'error');
-                return;
-            }
-
-            // Validasi kategori dan satuan jika dipilih
-            if (categoryId && !kasirCategories.some(c => c.id === categoryId)) {
-                showNotification('Kategori tidak valid', 'error');
-                return;
-            }
-            if (satuanId && !kasirSatuan.some(s => s.id === satuanId)) {
-                showNotification('Satuan tidak valid', 'error');
-                return;
-            }
-
-            const unitConversions = tempUnitConversions.map(conv => {
-                // Pastikan setiap konversi memiliki id unik (gunakan timestamp + index)
-                if (!conv.id) conv.id = Date.now() + Math.floor(Math.random() * 1000);
-                return conv;
-            });
-
-            const now = new Date().toISOString();
-
-            try {
-                if (editingItemId) {
-                    const item = kasirItems.find(i => i.id === editingItemId);
-                    if (item) {
-                        Object.assign(item, {
-                            name, code, barcode, categoryId, hargaDasar, hargaJual, berat, satuanId,
-                            diskon, stock, minStock, isWeighable, track_batch, track_serial,
-                            priceLevels, unitConversions,
-                            updatedAt: now
-                        });
-                        await dbPut(STORES.KASIR_ITEMS, item);
-                    }
-                } else {
-                    const newItem = {
-                        name, code, barcode, categoryId, hargaDasar, hargaJual, berat, satuanId,
-                        diskon, stock, minStock, isWeighable, track_batch, track_serial,
-                        priceLevels, unitConversions,
-                        createdAt: now, updatedAt: now
-                    };
-                    await dbAdd(STORES.KASIR_ITEMS, newItem);
-                }
-                await loadKasirItems();
-                showNotification('Item berhasil disimpan', 'success');
-                navigateTo('listItems');
-            } catch (error) {
-                showNotification('Gagal menyimpan: ' + error.message, 'error');
-            }
-        }
-
-        // ==================== FUNGSI LEVEL HARGA ====================
-        function addLevelRow(minQty = '', price = '') {
-            const container = document.getElementById('level-harga-container');
-            const index = container.children.length + 1;
-            const row = document.createElement('div');
-            row.className = 'level-harga-item';
-            row.innerHTML = `
-                <span class="level-number">Level ${index}</span>
-                <input type="number" class="form-input level-minqty" placeholder="Min. Qty" value="${minQty}" min="1" step="1">
-                <input type="number" class="form-input level-price" placeholder="Harga" value="${price}" min="0" step="0.01">
-                <button type="button" class="level-harga-remove" onclick="this.closest('.level-harga-item').remove()">×</button>
-            `;
-            container.appendChild(row);
-        }
-
-        function getPriceLevelsFromDOM() {
-            const rows = document.querySelectorAll('.level-harga-item');
-            const levels = [];
-            rows.forEach(row => {
-                const minQty = parseFloat(row.querySelector('.level-minqty').value);
-                const price = parseFloat(row.querySelector('.level-price').value);
-                if (!isNaN(minQty) && !isNaN(price) && minQty > 0 && price >= 0) {
-                    levels.push({ minQty, price });
-                }
-            });
-            // Urutkan berdasarkan minQty
-            levels.sort((a, b) => a.minQty - b.minQty);
-            return levels;
-        }
-
-        // ==================== FUNGSI KONVERSI SATUAN ====================
-        function renderConversionsList() {
-            const list = document.getElementById('conversions-list');
-            if (!list) return;
-            list.innerHTML = '';
-            if (tempUnitConversions.length === 0) {
-                list.innerHTML = '<p style="color:#666; text-align:center;">Belum ada konversi</p>';
-                return;
-            }
-            tempUnitConversions.forEach((conv, index) => {
-                const unitName = kasirSatuan.find(s => s.id === conv.unit)?.name || '?';
-                const div = document.createElement('div');
-                div.className = 'conversion-item';
-                div.innerHTML = `
-                    <div class="conversion-info">
-                        <strong>${unitName}</strong> = ${conv.value} satuan dasar<br>
-                        Barcode: ${conv.barcode || '-'}<br>
-                        Harga Jual: ${formatRupiah(conv.sellPrice || 0)}
-                    </div>
-                    <div class="conversion-actions">
-                        <button class="action-btn edit-btn" onclick="editConversion(${index})">✏️</button>
-                        <button class="action-btn delete-btn" onclick="deleteConversion(${index})">🗑️</button>
-                    </div>
-                `;
-                list.appendChild(div);
-            });
-        }
-
-        function showConversionModal() {
-            // Reset form
-            document.getElementById('conv-unit').innerHTML = '<option value="">-- Pilih Satuan --</option>' + 
-                kasirSatuan.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-            document.getElementById('conv-value').value = '';
-            document.getElementById('conv-barcode').value = '';
-            document.getElementById('conv-sku').value = '';
-            document.getElementById('conv-base-price').value = '';
-            document.getElementById('conv-sell-price').value = '';
-            document.getElementById('conv-points').value = '';
-            document.getElementById('conv-commission').value = '';
-            editingConversionIndex = -1;
-            document.getElementById('conversion-modal-title').textContent = 'Tambah Konversi Satuan';
-            document.getElementById('conversion-modal').style.display = 'flex';
-        }
-
-        function editConversion(index) {
-            const conv = tempUnitConversions[index];
-            if (!conv) return;
-            // Isi form
-            const unitSelect = document.getElementById('conv-unit');
-            unitSelect.innerHTML = '<option value="">-- Pilih Satuan --</option>' + 
-                kasirSatuan.map(s => `<option value="${s.id}" ${s.id === conv.unit ? 'selected' : ''}>${s.name}</option>`).join('');
-            document.getElementById('conv-value').value = conv.value;
-            document.getElementById('conv-barcode').value = conv.barcode || '';
-            document.getElementById('conv-sku').value = conv.sku || '';
-            document.getElementById('conv-base-price').value = conv.basePrice || '';
-            document.getElementById('conv-sell-price').value = conv.sellPrice || '';
-            document.getElementById('conv-points').value = conv.points || '';
-            document.getElementById('conv-commission').value = conv.commission || '';
-            editingConversionIndex = index;
-            document.getElementById('conversion-modal-title').textContent = 'Edit Konversi Satuan';
-            document.getElementById('conversion-modal').style.display = 'flex';
-        }
-
-        function deleteConversion(index) {
-            if (confirm('Hapus konversi ini?')) {
-                tempUnitConversions.splice(index, 1);
-                renderConversionsList();
-            }
-        }
-
-        function closeConversionModal() {
-            document.getElementById('conversion-modal').style.display = 'none';
-        }
-
-        function saveConversionFromModal() {
-            const unit = parseInt(document.getElementById('conv-unit').value);
-            const value = parseFloat(document.getElementById('conv-value').value);
-            const barcode = document.getElementById('conv-barcode').value.trim();
-            const sku = document.getElementById('conv-sku').value.trim();
-            const basePrice = parseFloat(document.getElementById('conv-base-price').value) || null;
-            const sellPrice = parseFloat(document.getElementById('conv-sell-price').value) || null;
-            const points = parseFloat(document.getElementById('conv-points').value) || null;
-            const commission = parseFloat(document.getElementById('conv-commission').value) || null;
-
-            if (!unit || isNaN(value) || value <= 0) {
-                showNotification('Satuan dan nilai harus diisi dengan benar', 'error');
-                return;
-            }
-
-            // Cek duplikasi satuan dalam konversi (kecuali sedang edit index yang sama)
-            const existingIndex = tempUnitConversions.findIndex((c, idx) => c.unit === unit && idx !== editingConversionIndex);
-            if (existingIndex !== -1) {
-                showNotification('Satuan ini sudah ada dalam daftar konversi', 'error');
-                return;
-            }
-
-            const conversion = {
-                id: editingConversionIndex >= 0 ? tempUnitConversions[editingConversionIndex].id : Date.now() + Math.random(),
-                unit,
-                value,
-                barcode,
-                sku,
-                basePrice,
-                sellPrice,
-                points,
-                commission
-            };
-
-            if (editingConversionIndex >= 0) {
-                tempUnitConversions[editingConversionIndex] = conversion;
-            } else {
-                tempUnitConversions.push(conversion);
-            }
-
-            renderConversionsList();
-            closeConversionModal();
-        }
-
-        // ==================== MODAL PILIH ITEM ====================
-        function showSelectItemModal(callback) {
-            selectItemCallback = callback;
-            document.getElementById('item-search-input').value = '';
-            document.getElementById('item-list-container').innerHTML = '<div style="text-align:center; padding:20px; color:#666;">Ketikkan pencarian...</div>';
-            document.getElementById('select-item-modal').style.display = 'flex';
-        }
-
-        function closeSelectItemModal() {
-            document.getElementById('select-item-modal').style.display = 'none';
-            selectItemCallback = null;
-        }
-
-        function searchItems() {
-            const keyword = document.getElementById('item-search-input').value.toLowerCase().trim();
-            const container = document.getElementById('item-list-container');
-            if (!keyword) {
-                container.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">Ketikkan pencarian...</div>';
-                return;
-            }
-            const filtered = kasirItems.filter(item => 
-                item.name.toLowerCase().includes(keyword) || 
-                item.code.toLowerCase().includes(keyword) || 
-                (item.barcode && item.barcode.toLowerCase().includes(keyword))
-            );
-            if (filtered.length === 0) {
-                container.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">Tidak ditemukan</div>';
-                return;
-            }
-            let html = '';
-            filtered.forEach(item => {
-                html += `
-                    <div class="item-row">
-                        <div class="item-info">
-                            <div class="item-name">${item.name}</div>
-                            <div class="item-details">
-                                <span class="item-code">${item.code}</span>
-                                ${item.barcode ? `<span class="item-barcode">${item.barcode}</span>` : ''}
-                            </div>
-                        </div>
-                        <button class="select-btn" onclick="selectItem(${item.id})">Pilih</button>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-        }
-
-        function selectItem(itemId) {
-            const item = kasirItems.find(i => i.id === itemId);
-            if (selectItemCallback && item) {
-                selectItemCallback(item);
-            }
-            closeSelectItemModal();
-        }
-
-        // ==================== FUNGSI KATEGORI ====================
+        // ==================== FUNGSI KATEGORI (DENGAN PENCARIAN) ====================
         function showCategoryListPage() {
-            const categories = kasirCategories;
-            let rows = '';
-            categories.forEach(cat => {
-                rows += `
-                    <tr>
-                        <td>${cat.name}</td>
-                        <td>${cat.description || '-'}</td>
-                        <td>
-                            <button class="action-btn edit-btn" onclick="navigateTo('editCategory', ${cat.id})">✏️</button>
-                            <button class="action-btn delete-btn" onclick="deleteCategoryPrompt(${cat.id})">🗑️</button>
-                        </td>
-                    </tr>
-                `;
-            });
+            const allCategories = kasirCategories;
+            const container = document.getElementById('master-content');
+
+            function renderCategories(filterText = '') {
+                const lowerFilter = filterText.toLowerCase();
+                const filtered = allCategories.filter(cat => 
+                    cat.name.toLowerCase().includes(lowerFilter) || 
+                    (cat.description && cat.description.toLowerCase().includes(lowerFilter))
+                );
+
+                let rows = '';
+                filtered.forEach(cat => {
+                    rows += `
+                        <tr>
+                            <td>${cat.name}</td>
+                            <td>${cat.description || '-'}</td>
+                            <td>
+                                <button class="action-btn edit-btn" onclick="navigateTo('editCategory', ${cat.id})">✏️</button>
+                                <button class="action-btn delete-btn" onclick="deleteCategoryPrompt(${cat.id})">🗑️</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                const tbody = document.getElementById('categories-tbody');
+                if (tbody) {
+                    tbody.innerHTML = rows || '<tr><td colspan="3" style="text-align:center;">Tidak ada kategori yang cocok</td></tr>';
+                }
+            }
+
             const html = `
                 <div class="content-card">
                     <h2 class="page-title">
                         Daftar Kategori
-                        <button class="form-button-primary" style="margin-left:auto;" onclick="navigateTo('addCategory')">+ Tambah Kategori</button>
+                        <button class="form-button-primary" onclick="navigateTo('addCategory')">+ Tambah Kategori</button>
                     </h2>
+                    <div class="search-box">
+                        <input type="text" id="search-categories" class="form-input" placeholder="Cari nama atau deskripsi kategori...">
+                    </div>
                     <div class="table-responsive">
                         <table class="data-table">
                             <thead>
@@ -2004,14 +1594,18 @@
                                     <th>Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                ${rows || '<tr><td colspan="3" style="text-align:center;">Belum ada kategori</td></tr>'}
+                            <tbody id="categories-tbody">
+                                <!-- akan diisi -->
                             </tbody>
                         </table>
                     </div>
                 </div>
             `;
-            document.getElementById('master-content').innerHTML = html;
+            container.innerHTML = html;
+
+            const searchInput = document.getElementById('search-categories');
+            searchInput.addEventListener('input', (e) => renderCategories(e.target.value));
+            renderCategories('');
         }
 
         function showAddCategoryPage() {
@@ -2100,7 +1694,6 @@
             if (confirm('Hapus kategori ini? Item dengan kategori ini akan kehilangan kategori.')) {
                 try {
                     await dbDelete(STORES.KASIR_CATEGORIES, id);
-                    // Update item yang menggunakan kategori ini (set ke null)
                     const itemsToUpdate = kasirItems.filter(i => i.categoryId === id);
                     for (let item of itemsToUpdate) {
                         item.categoryId = null;
@@ -2116,7 +1709,7 @@
             }
         }
 
-        // ==================== FUNGSI SATUAN ====================
+        // ==================== FUNGSI SATUAN (TETAP SAMA, TANPA PENCARIAN) ====================
         function showUnitListPage() {
             const units = kasirSatuan;
             let rows = '';
@@ -2243,7 +1836,6 @@
             if (confirm('Hapus satuan ini? Item yang menggunakan satuan ini akan kehilangan satuan.')) {
                 try {
                     await dbDelete(STORES.KASIR_SATUAN, id);
-                    // Update item yang menggunakan satuan ini (set ke null)
                     const itemsToUpdate = kasirItems.filter(i => i.satuanId === id);
                     for (let item of itemsToUpdate) {
                         item.satuanId = null;
@@ -2259,7 +1851,7 @@
             }
         }
 
-        // ==================== FUNGSI BUNDLE ====================
+        // ==================== FUNGSI BUNDLE (TANPA PENCARIAN) ====================
         function showBundleListPage() {
             const bundlesList = bundles;
             let rows = '';
@@ -2362,14 +1954,13 @@
         }
 
         function addBundleItem(item) {
-            // item adalah objek item yang dipilih dari modal
             addBundleItemRow({ itemId: item.id, quantity: 1 });
         }
 
         function addBundleItemRow(data) {
             const container = document.getElementById('bundle-items-container');
             const row = document.createElement('div');
-            row.className = 'bom-component-row'; // gunakan style yang sama
+            row.className = 'bom-component-row';
             const item = kasirItems.find(i => i.id === data.itemId);
             row.innerHTML = `
                 <span style="flex:2;">${item ? item.name : 'Item tidak ditemukan'}</span>
@@ -2381,7 +1972,7 @@
         }
 
         function updateBundleItemQty(input) {
-            // tidak perlu action khusus, nilai akan diambil saat simpan
+            // tidak perlu aksi
         }
 
         function collectBundleItems() {
@@ -2454,6 +2045,450 @@
                     showNotification('Gagal hapus: ' + error.message, 'error');
                 }
             }
+        }
+
+        // ==================== FUNGSI ITEM (TAMBAH/EDIT) ====================
+        function showAddItemPage() {
+            editingItemId = null;
+            tempUnitConversions = [];
+            const html = `
+                <div class="content-card">
+                    <h2 class="page-title">
+                        <button class="back-button" onclick="navigateTo('listItems')" title="Kembali ke Daftar Item">
+                            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12 19 5 12 12 5"></polyline>
+                            </svg>
+                        </button>
+                        Tambah Item Baru
+                    </h2>
+                    <form id="item-form" onsubmit="event.preventDefault();">
+                        <div class="form-group">
+                            <label>Nama Item *</label>
+                            <input type="text" id="kasir-item-name" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Kode Item *</label>
+                            <input type="text" id="kasir-item-code" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Barcode Item</label>
+                            <input type="text" id="kasir-item-barcode" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label>Kategori Kasir</label>
+                            <select id="kasir-item-category" class="form-input">
+                                <option value="">-- Pilih Kategori --</option>
+                                ${kasirCategories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Harga Dasar</label>
+                                <input type="number" id="kasir-item-harga-dasar" class="form-input" min="0" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label>Harga Jual</label>
+                                <input type="number" id="kasir-item-harga-jual" class="form-input" min="0" step="0.01">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Berat</label>
+                                <input type="number" id="kasir-item-berat" class="form-input" min="0" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label>Satuan Dasar</label>
+                                <select id="kasir-item-satuan" class="form-input">
+                                    <option value="">-- Pilih Satuan --</option>
+                                    ${kasirSatuan.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Diskon (%) *opsional</label>
+                            <input type="number" id="kasir-item-diskon" class="form-input" min="0" max="100" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label>Stok Awal</label>
+                            <input type="number" id="kasir-item-stock" class="form-input" min="0" value="0" step="any">
+                        </div>
+                        <div class="form-group">
+                            <label>Stok Minimal</label>
+                            <input type="number" id="kasir-item-min-stock" class="form-input" min="0" value="5" step="any">
+                            <small>Jika stok di bawah angka ini, akan muncul notifikasi</small>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="kasir-item-weighable"> Produk Timbangan (harga per kg)
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="kasir-item-track-batch"> Lacak Batch (Expiry Date)
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="kasir-item-track-serial"> Lacak Serial Number
+                            </label>
+                        </div>
+                        <div class="conversions-section">
+                            <label style="font-weight:500;">Konversi Satuan</label>
+                            <button type="button" id="add-conversion-btn" onclick="showConversionModal()">
+                                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="1.5">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="12" y1="8" x2="12" y2="16"/>
+                                    <line x1="8" y1="12" x2="16" y2="12"/>
+                                </svg>
+                                Tambah Konversi Satuan
+                            </button>
+                            <div id="conversions-list" class="conversions-list"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Level Harga (Qty Break)</label>
+                            <div class="level-harga-container" id="level-harga-container"></div>
+                            <button type="button" class="btn-add-level" onclick="addLevelRow()">
+                                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="1.5">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="12" y1="8" x2="12" y2="16"/>
+                                    <line x1="8" y1="12" x2="16" y2="12"/>
+                                </svg>
+                                Tambah Level
+                            </button>
+                        </div>
+                        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
+                            <button type="button" class="form-button-secondary" onclick="navigateTo('listItems')">Batal</button>
+                            <button type="button" class="form-button-primary" onclick="saveKasirItemFromPage()">Simpan</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            document.getElementById('master-content').innerHTML = html;
+            const levelContainer = document.getElementById('level-harga-container');
+            levelContainer.innerHTML = '';
+            addLevelRow();
+            renderConversionsList();
+        }
+
+        function showEditItemPage(itemId) {
+            const item = kasirItems.find(i => i.id === itemId);
+            if (!item) {
+                showNotification('Item tidak ditemukan', 'error');
+                navigateTo('listItems');
+                return;
+            }
+            editingItemId = itemId;
+            tempUnitConversions = item.unitConversions ? JSON.parse(JSON.stringify(item.unitConversions)) : [];
+            tempUnitConversions = tempUnitConversions.map((conv, idx) => {
+                if (!conv.id) conv.id = idx + 1;
+                return conv;
+            });
+
+            showAddItemPage();
+
+            setTimeout(() => {
+                document.getElementById('kasir-item-name').value = item.name || '';
+                document.getElementById('kasir-item-code').value = item.code || '';
+                document.getElementById('kasir-item-barcode').value = item.barcode || item.code || '';
+                document.getElementById('kasir-item-category').value = item.categoryId || '';
+                document.getElementById('kasir-item-harga-dasar').value = item.hargaDasar || '';
+                document.getElementById('kasir-item-harga-jual').value = item.hargaJual || '';
+                document.getElementById('kasir-item-berat').value = item.berat || '';
+                document.getElementById('kasir-item-satuan').value = item.satuanId || '';
+                document.getElementById('kasir-item-diskon').value = item.diskon || '';
+                document.getElementById('kasir-item-stock').value = item.stock || 0;
+                document.getElementById('kasir-item-min-stock').value = item.minStock || 5;
+                document.getElementById('kasir-item-weighable').checked = item.isWeighable || false;
+                document.getElementById('kasir-item-track-batch').checked = item.track_batch || false;
+                document.getElementById('kasir-item-track-serial').checked = item.track_serial || false;
+
+                const levelContainer = document.getElementById('level-harga-container');
+                levelContainer.innerHTML = '';
+                if (item.priceLevels && item.priceLevels.length > 0) {
+                    item.priceLevels.forEach(l => addLevelRow(l.minQty, l.price));
+                } else {
+                    addLevelRow();
+                }
+
+                renderConversionsList();
+            }, 0);
+        }
+
+        async function saveKasirItemFromPage() {
+            if (editingItemId) {
+                editingItemId = Number(editingItemId);
+            }
+            const name = document.getElementById('kasir-item-name').value.trim();
+            const code = document.getElementById('kasir-item-code').value.trim();
+            const barcode = document.getElementById('kasir-item-barcode').value.trim() || code;
+            const categoryId = document.getElementById('kasir-item-category').value ? parseInt(document.getElementById('kasir-item-category').value) : null;
+            const hargaDasar = parseFloat(document.getElementById('kasir-item-harga-dasar').value) || null;
+            const hargaJual = parseFloat(document.getElementById('kasir-item-harga-jual').value) || null;
+            const berat = parseFloat(document.getElementById('kasir-item-berat').value) || null;
+            const satuanId = document.getElementById('kasir-item-satuan').value ? parseInt(document.getElementById('kasir-item-satuan').value) : null;
+            const diskon = parseFloat(document.getElementById('kasir-item-diskon').value) || null;
+            const stock = parseFloat(document.getElementById('kasir-item-stock').value) || 0;
+            const minStock = parseFloat(document.getElementById('kasir-item-min-stock').value) || 5;
+            const isWeighable = document.getElementById('kasir-item-weighable').checked;
+            const track_batch = document.getElementById('kasir-item-track-batch').checked;
+            const track_serial = document.getElementById('kasir-item-track-serial').checked;
+
+            const priceLevels = getPriceLevelsFromDOM();
+
+            if (!name || !code) {
+                showNotification('Nama dan kode harus diisi!', 'error');
+                return;
+            }
+
+            const duplicate = kasirItems.find(i => i.code === code && i.id !== editingItemId);
+            if (duplicate) {
+                showNotification(`Kode "${code}" sudah digunakan!`, 'error');
+                return;
+            }
+
+            if (categoryId && !kasirCategories.some(c => c.id === categoryId)) {
+                showNotification('Kategori tidak valid', 'error');
+                return;
+            }
+            if (satuanId && !kasirSatuan.some(s => s.id === satuanId)) {
+                showNotification('Satuan tidak valid', 'error');
+                return;
+            }
+
+            const unitConversions = tempUnitConversions.map(conv => {
+                if (!conv.id) conv.id = Date.now() + Math.floor(Math.random() * 1000);
+                return conv;
+            });
+
+            const now = new Date().toISOString();
+
+            try {
+                if (editingItemId) {
+                    const item = kasirItems.find(i => i.id === editingItemId);
+                    if (item) {
+                        Object.assign(item, {
+                            name, code, barcode, categoryId, hargaDasar, hargaJual, berat, satuanId,
+                            diskon, stock, minStock, isWeighable, track_batch, track_serial,
+                            priceLevels, unitConversions,
+                            updatedAt: now
+                        });
+                        await dbPut(STORES.KASIR_ITEMS, item);
+                    }
+                } else {
+                    const newItem = {
+                        name, code, barcode, categoryId, hargaDasar, hargaJual, berat, satuanId,
+                        diskon, stock, minStock, isWeighable, track_batch, track_serial,
+                        priceLevels, unitConversions,
+                        createdAt: now, updatedAt: now
+                    };
+                    await dbAdd(STORES.KASIR_ITEMS, newItem);
+                }
+                await loadKasirItems();
+                showNotification('Item berhasil disimpan', 'success');
+                navigateTo('listItems');
+            } catch (error) {
+                showNotification('Gagal menyimpan: ' + error.message, 'error');
+            }
+        }
+
+        // ==================== FUNGSI LEVEL HARGA ====================
+        function addLevelRow(minQty = '', price = '') {
+            const container = document.getElementById('level-harga-container');
+            const index = container.children.length + 1;
+            const row = document.createElement('div');
+            row.className = 'level-harga-item';
+            row.innerHTML = `
+                <span class="level-number">Level ${index}</span>
+                <input type="number" class="form-input level-minqty" placeholder="Min. Qty" value="${minQty}" min="1" step="1">
+                <input type="number" class="form-input level-price" placeholder="Harga" value="${price}" min="0" step="0.01">
+                <button type="button" class="level-harga-remove" onclick="this.closest('.level-harga-item').remove()">×</button>
+            `;
+            container.appendChild(row);
+        }
+
+        function getPriceLevelsFromDOM() {
+            const rows = document.querySelectorAll('.level-harga-item');
+            const levels = [];
+            rows.forEach(row => {
+                const minQty = parseFloat(row.querySelector('.level-minqty').value);
+                const price = parseFloat(row.querySelector('.level-price').value);
+                if (!isNaN(minQty) && !isNaN(price) && minQty > 0 && price >= 0) {
+                    levels.push({ minQty, price });
+                }
+            });
+            levels.sort((a, b) => a.minQty - b.minQty);
+            return levels;
+        }
+
+        // ==================== FUNGSI KONVERSI SATUAN ====================
+        function renderConversionsList() {
+            const list = document.getElementById('conversions-list');
+            if (!list) return;
+            list.innerHTML = '';
+            if (tempUnitConversions.length === 0) {
+                list.innerHTML = '<p style="color:#666; text-align:center;">Belum ada konversi</p>';
+                return;
+            }
+            tempUnitConversions.forEach((conv, index) => {
+                const unitName = kasirSatuan.find(s => s.id === conv.unit)?.name || '?';
+                const div = document.createElement('div');
+                div.className = 'conversion-item';
+                div.innerHTML = `
+                    <div class="conversion-info">
+                        <strong>${unitName}</strong> = ${conv.value} satuan dasar<br>
+                        Barcode: ${conv.barcode || '-'}<br>
+                        Harga Jual: ${formatRupiah(conv.sellPrice || 0)}
+                    </div>
+                    <div class="conversion-actions">
+                        <button class="action-btn edit-btn" onclick="editConversion(${index})">✏️</button>
+                        <button class="action-btn delete-btn" onclick="deleteConversion(${index})">🗑️</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function showConversionModal() {
+            document.getElementById('conv-unit').innerHTML = '<option value="">-- Pilih Satuan --</option>' + 
+                kasirSatuan.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            document.getElementById('conv-value').value = '';
+            document.getElementById('conv-barcode').value = '';
+            document.getElementById('conv-sku').value = '';
+            document.getElementById('conv-base-price').value = '';
+            document.getElementById('conv-sell-price').value = '';
+            document.getElementById('conv-points').value = '';
+            document.getElementById('conv-commission').value = '';
+            editingConversionIndex = -1;
+            document.getElementById('conversion-modal-title').textContent = 'Tambah Konversi Satuan';
+            document.getElementById('conversion-modal').style.display = 'flex';
+        }
+
+        function editConversion(index) {
+            const conv = tempUnitConversions[index];
+            if (!conv) return;
+            const unitSelect = document.getElementById('conv-unit');
+            unitSelect.innerHTML = '<option value="">-- Pilih Satuan --</option>' + 
+                kasirSatuan.map(s => `<option value="${s.id}" ${s.id === conv.unit ? 'selected' : ''}>${s.name}</option>`).join('');
+            document.getElementById('conv-value').value = conv.value;
+            document.getElementById('conv-barcode').value = conv.barcode || '';
+            document.getElementById('conv-sku').value = conv.sku || '';
+            document.getElementById('conv-base-price').value = conv.basePrice || '';
+            document.getElementById('conv-sell-price').value = conv.sellPrice || '';
+            document.getElementById('conv-points').value = conv.points || '';
+            document.getElementById('conv-commission').value = conv.commission || '';
+            editingConversionIndex = index;
+            document.getElementById('conversion-modal-title').textContent = 'Edit Konversi Satuan';
+            document.getElementById('conversion-modal').style.display = 'flex';
+        }
+
+        function deleteConversion(index) {
+            if (confirm('Hapus konversi ini?')) {
+                tempUnitConversions.splice(index, 1);
+                renderConversionsList();
+            }
+        }
+
+        function closeConversionModal() {
+            document.getElementById('conversion-modal').style.display = 'none';
+        }
+
+        function saveConversionFromModal() {
+            const unit = parseInt(document.getElementById('conv-unit').value);
+            const value = parseFloat(document.getElementById('conv-value').value);
+            const barcode = document.getElementById('conv-barcode').value.trim();
+            const sku = document.getElementById('conv-sku').value.trim();
+            const basePrice = parseFloat(document.getElementById('conv-base-price').value) || null;
+            const sellPrice = parseFloat(document.getElementById('conv-sell-price').value) || null;
+            const points = parseFloat(document.getElementById('conv-points').value) || null;
+            const commission = parseFloat(document.getElementById('conv-commission').value) || null;
+
+            if (!unit || isNaN(value) || value <= 0) {
+                showNotification('Satuan dan nilai harus diisi dengan benar', 'error');
+                return;
+            }
+
+            const existingIndex = tempUnitConversions.findIndex((c, idx) => c.unit === unit && idx !== editingConversionIndex);
+            if (existingIndex !== -1) {
+                showNotification('Satuan ini sudah ada dalam daftar konversi', 'error');
+                return;
+            }
+
+            const conversion = {
+                id: editingConversionIndex >= 0 ? tempUnitConversions[editingConversionIndex].id : Date.now() + Math.random(),
+                unit,
+                value,
+                barcode,
+                sku,
+                basePrice,
+                sellPrice,
+                points,
+                commission
+            };
+
+            if (editingConversionIndex >= 0) {
+                tempUnitConversions[editingConversionIndex] = conversion;
+            } else {
+                tempUnitConversions.push(conversion);
+            }
+
+            renderConversionsList();
+            closeConversionModal();
+        }
+
+        // ==================== MODAL PILIH ITEM ====================
+        function showSelectItemModal(callback) {
+            selectItemCallback = callback;
+            document.getElementById('item-search-input').value = '';
+            document.getElementById('item-list-container').innerHTML = '<div style="text-align:center; padding:20px; color:#666;">Ketikkan pencarian...</div>';
+            document.getElementById('select-item-modal').style.display = 'flex';
+        }
+
+        function closeSelectItemModal() {
+            document.getElementById('select-item-modal').style.display = 'none';
+            selectItemCallback = null;
+        }
+
+        function searchItems() {
+            const keyword = document.getElementById('item-search-input').value.toLowerCase().trim();
+            const container = document.getElementById('item-list-container');
+            if (!keyword) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">Ketikkan pencarian...</div>';
+                return;
+            }
+            const filtered = kasirItems.filter(item => 
+                item.name.toLowerCase().includes(keyword) || 
+                item.code.toLowerCase().includes(keyword) || 
+                (item.barcode && item.barcode.toLowerCase().includes(keyword))
+            );
+            if (filtered.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">Tidak ditemukan</div>';
+                return;
+            }
+            let html = '';
+            filtered.forEach(item => {
+                html += `
+                    <div class="item-row">
+                        <div class="item-info">
+                            <div class="item-name">${item.name}</div>
+                            <div class="item-details">
+                                <span class="item-code">${item.code}</span>
+                                ${item.barcode ? `<span class="item-barcode">${item.barcode}</span>` : ''}
+                            </div>
+                        </div>
+                        <button class="select-btn" onclick="selectItem(${item.id})">Pilih</button>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function selectItem(itemId) {
+            const item = kasirItems.find(i => i.id === itemId);
+            if (selectItemCallback && item) {
+                selectItemCallback(item);
+            }
+            closeSelectItemModal();
         }
 
         // ==================== LOGOUT ====================
@@ -2530,7 +2565,6 @@
                 } else if (action === 'listBOMs') {
                     showBOMListPage();
                 } else {
-                    // Tampilkan halaman utama master data
                     document.getElementById('master-content').innerHTML = `
                         <div class="content-card">
                             <h2 class="page-title">Master Data</h2>
@@ -2546,7 +2580,6 @@
 
         initMasterPage();
 
-        // Tutup modal jika klik di luar konten
         window.onclick = function(event) {
             if (event.target.classList.contains('modal-overlay')) {
                 event.target.style.display = 'none';
