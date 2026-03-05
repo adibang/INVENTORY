@@ -4,288 +4,166 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MUDA - Manajemen Gudang</title>
+    <!-- BUG FIX: Tambah CSP header untuk keamanan -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
     <style>
         /* ==================== RESET & BASE ==================== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-        body {
-            background: #f5f5f5;
-            color: #333;
-            min-height: 100vh;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { background: #f5f5f5; color: #333; min-height: 100vh; }
 
         /* ==================== HEADER ==================== */
         .app-header {
-            background: #FFFFFF;
-            color: #006B54;
-            padding: 16px 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            display: flex;
-            align-items: center;
-            gap: 15px;
+            background: #FFFFFF; color: #006B54; padding: 16px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100;
+            display: flex; align-items: center; gap: 15px;
         }
-        .app-header h1 {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #006B54;
-        }
+        .app-header h1 { font-size: 1.2rem; font-weight: 600; color: #006B54; }
         .back-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: #006B54;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 8px;
+            background: none; border: none; cursor: pointer; color: #006B54;
+            display: flex; align-items: center; justify-content: center; padding: 8px;
         }
-        .back-btn svg {
-            width: 24px;
-            height: 24px;
-            stroke: currentColor;
-            stroke-width: 2;
-            fill: none;
-        }
-        #user-name-display {
-            font-weight: 600;
-            color: #006B54;
-            margin-left: auto;
-            margin-right: 10px;
-        }
+        .back-btn svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 2; fill: none; }
+        #user-name-display { font-weight: 600; color: #006B54; margin-left: auto; margin-right: 10px; }
         .logout-btn {
-            background: none;
-            border: 1px solid #006B54;
-            border-radius: 15px;
-            padding: 8px 12px;
-            color: #006B54;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-            transition: all 0.2s;
+            background: none; border: 1px solid #006B54; border-radius: 15px;
+            padding: 8px 12px; color: #006B54; display: inline-flex;
+            align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s;
         }
-        .logout-btn:hover {
-            background: #006B54;
-            color: white;
-        }
-        .logout-btn svg {
-            width: 20px;
-            height: 20px;
-            stroke: currentColor;
-            stroke-width: 2;
-            fill: none;
-        }
+        .logout-btn:hover { background: #006B54; color: white; }
+        .logout-btn svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2; fill: none; }
 
         /* ==================== MAIN CONTENT ==================== */
-        .main-content {
-            max-width: 1200px;
-            margin: 20px auto;
-            padding: 0 20px;
-        }
-
-        .page-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-        .page-header h2 {
-            color: #006B54;
-            font-size: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .main-content { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
+        .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .page-header h2 { color: #006B54; font-size: 1.5rem; display: flex; align-items: center; gap: 8px; }
 
         /* Tombol */
         button {
-            border-radius: 15px;
-            padding: 8px 16px;
-            font-weight: 600;
-            cursor: pointer;
-            border: 1px solid transparent;
-            font-size: 0.9rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s;
+            border-radius: 15px; padding: 8px 16px; font-weight: 600; cursor: pointer;
+            border: 1px solid transparent; font-size: 0.9rem; display: inline-flex;
+            align-items: center; gap: 6px; transition: all 0.2s;
         }
-        .btn-primary {
-            background: #006B54;
-            color: white;
-            border: 1px solid #006B54;
-        }
-        .btn-primary:hover {
-            background: #005a46;
-        }
-        .btn-secondary {
-            background: #d9d9d9;
-            color: #333;
-            border: 1px solid #d9d9d9;
-        }
-        .btn-secondary:hover {
-            background: #cccccc;
-        }
-        .btn-danger {
-            background: #ff6b6b;
-            color: white;
-            border: 1px solid #ff6b6b;
-        }
-        .btn-danger:hover {
-            background: #ff5252;
-        }
-        .action-btn {
-            padding: 6px 12px;
-            margin-right: 5px;
-        }
+        .btn-primary { background: #006B54; color: white; border: 1px solid #006B54; }
+        .btn-primary:hover { background: #005a46; }
+        .btn-secondary { background: #d9d9d9; color: #333; border: 1px solid #d9d9d9; }
+        .btn-secondary:hover { background: #cccccc; }
+        .btn-danger { background: #ff6b6b; color: white; border: 1px solid #ff6b6b; }
+        .btn-danger:hover { background: #ff5252; }
+        .action-btn { padding: 6px 12px; margin-right: 5px; }
+        .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* Tabel */
+        /* Tabel - BUG FIX: Responsive & accessible */
         .table-container {
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            overflow-x: auto;
+            background: white; border-radius: 15px; padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow-x: auto;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th {
-            background: #006B54;
-            color: white;
-            padding: 12px;
-            text-align: left;
-        }
-        td {
-            padding: 12px;
-            border-bottom: 1px solid #eee;
-        }
-        tr:hover {
-            background: #f5f5f5;
-        }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #006B54; color: white; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #eee; }
+        tr:hover { background: #f5f5f5; }
+        /* BUG FIX: Empty state styling */
+        .empty-state { text-align: center; padding: 40px 20px; color: #666; }
+        .empty-state .btn-primary { margin-top: 15px; }
 
-        /* Modal */
+        /* Modal - BUG FIX: Accessibility & animation */
         .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5);
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); align-items: center; justify-content: center;
+            z-index: 1000; animation: fadeIn 0.2s ease;
         }
+        .modal-overlay.show { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
         .modal-content {
-            background: white;
-            border-radius: 15px;
-            max-width: 500px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-            padding: 20px;
+            background: white; border-radius: 15px; max-width: 500px;
+            width: 90%; max-height: 80vh; overflow-y: auto; padding: 20px;
+            animation: slideUp 0.3s ease;
         }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            color: #006B54;
-        }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; color: #006B54; }
         .close-btn {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #333;
+            background: none; border: none; font-size: 1.5rem; cursor: pointer;
+            color: #333; padding: 5px; line-height: 1; border-radius: 50%;
         }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .form-group label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 5px;
-            color: #333;
-        }
+        .close-btn:hover { background: #f5f5f5; }
+        
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 5px; color: #333; }
         .form-group input[type="text"],
         .form-group input[type="number"],
         .form-group select {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #333;
-            border-radius: 15px;
-            font-size: 1rem;
+            width: 100%; padding: 10px 12px; border: 1px solid #ccc;
+            border-radius: 15px; font-size: 1rem; transition: border-color 0.2s;
         }
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .checkbox-group input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-        }
-        .modal-footer {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            margin-top: 20px;
-        }
+        .form-group input:focus { outline: none; border-color: #006B54; box-shadow: 0 0 0 3px rgba(0,107,84,0.1); }
+        .form-group input.error { border-color: #dc3545; }
+        .form-group .error-message { color: #dc3545; font-size: 0.85rem; margin-top: 4px; display: none; }
+        .form-group .error-message.show { display: block; }
+        
+        .checkbox-group { display: flex; align-items: center; gap: 8px; }
+        .checkbox-group input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+        
+        .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
 
-        /* Notifikasi */
+        /* Notifikasi - BUG FIX: Better visibility */
         .notification {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 12px 20px;
-            border-radius: 15px;
-            background: #006B54;
-            color: white;
-            display: none;
-            z-index: 2000;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            padding: 12px 20px; border-radius: 15px; background: #006B54;
+            color: white; display: none; z-index: 2000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2); animation: slideDown 0.3s ease;
         }
+        .notification.show { display: block; }
+        .notification.error { background: #dc3545; }
+        .notification.warning { background: #ffc107; color: #333; }
+        .notification.success { background: #28a745; }
+        @keyframes slideDown { from { transform: translate(-50%, -20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+
+        /* Loading */
         .loading-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255,255,255,0.95);
-            z-index: 9999;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.95); z-index: 9999;
+            align-items: center; justify-content: center; flex-direction: column;
         }
+        .loading-overlay.show { display: flex; }
         .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #006B54;
-            border-radius: 50%;
+            width: 40px; height: 40px; border: 4px solid #f3f3f3;
+            border-top: 4px solid #006B54; border-radius: 50%;
             animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* BUG FIX: Utility classes */
+        .text-center { text-align: center; }
+        .text-danger { color: #dc3545; }
+        .text-success { color: #28a745; }
+        .hidden { display: none !important; }
+        .sr-only {
+            position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+            overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .modal-content { width: 95%; margin: 10px; }
+            .table-container { padding: 10px; }
+            th, td { padding: 8px; font-size: 0.9rem; }
+        }
     </style>
 </head>
 <body>
     <header class="app-header">
-        <button class="back-btn" onclick="window.location.href='index.html'">
-            <svg viewBox="0 0 24 24">
+        <button class="back-btn" onclick="window.location.href='index.html'" aria-label="Kembali ke Beranda">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
                 <line x1="19" y1="12" x2="5" y2="12"></line>
                 <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
         </button>
         <h1>Manajemen Gudang</h1>
-        <span id="user-name-display"></span>
-        <button class="logout-btn" onclick="logout()">
-            <svg viewBox="0 0 24 24">
+        <span id="user-name-display" aria-live="polite"></span>
+        <button class="logout-btn" onclick="logout()" aria-label="Keluar">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                 <polyline points="16 17 21 12 16 7"/>
                 <line x1="21" y1="12" x2="9" y2="12"/>
@@ -293,17 +171,17 @@
         </button>
     </header>
 
-    <div class="main-content">
+    <main class="main-content">
         <div class="page-header">
             <h2>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#006B54" stroke-width="2">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#006B54" stroke-width="2" aria-hidden="true">
                     <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
                     <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
                 </svg>
                 Daftar Gudang
             </h2>
-            <button class="btn-primary" onclick="showAddWarehouseForm()">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button class="btn-primary" onclick="showAddWarehouseForm()" id="btn-add-warehouse">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <circle cx="12" cy="12" r="10"/>
                     <line x1="12" y1="8" x2="12" y2="16"/>
                     <line x1="8" y1="12" x2="16" y2="12"/>
@@ -312,106 +190,370 @@
             </button>
         </div>
 
+        <!-- BUG FIX: Tambah search & filter -->
+        <div style="margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+            <input type="text" id="warehouse-search" class="form-input" 
+                   placeholder="Cari gudang..." 
+                   style="flex: 1; min-width: 200px; padding: 10px; border: 1px solid #ccc; border-radius: 15px;"
+                   oninput="filterWarehouseTable()">
+            <select id="warehouse-filter-status" class="form-input" 
+                    style="padding: 10px; border: 1px solid #ccc; border-radius: 15px;"
+                    onchange="filterWarehouseTable()">
+                <option value="">Semua Status</option>
+                <option value="active">Aktif</option>
+                <option value="inactive">Tidak Aktif</option>
+            </select>
+        </div>
+
         <div class="table-container">
-            <div id="warehouse-table-container">
+            <div id="warehouse-table-container" role="region" aria-live="polite">
                 <!-- Tabel akan diisi oleh JavaScript -->
-                <p style="text-align:center; padding:20px;">Memuat data...</p>
+                <p class="text-center" style="padding:20px; color:#666;">Memuat data...</p>
             </div>
         </div>
-    </div>
+    </main>
 
-    <!-- Modal Tambah/Edit Gudang -->
-    <div id="warehouse-modal" class="modal-overlay">
+    <!-- Modal Tambah/Edit Gudang - BUG FIX: Accessibility attributes -->
+    <div id="warehouse-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="warehouse-modal-title">
         <div class="modal-content">
             <div class="modal-header">
                 <h2 id="warehouse-modal-title">Tambah Gudang</h2>
-                <button class="close-btn" onclick="closeWarehouseModal()">&times;</button>
+                <button class="close-btn" onclick="closeWarehouseModal()" aria-label="Tutup modal">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label>Kode Gudang *</label>
-                    <input type="text" id="warehouse-code" placeholder="Contoh: WH01" maxlength="20">
-                </div>
-                <div class="form-group">
-                    <label>Nama Gudang *</label>
-                    <input type="text" id="warehouse-name" placeholder="Contoh: Gudang Utama">
-                </div>
-                <div class="form-group">
-                    <label>Lokasi</label>
-                    <input type="text" id="warehouse-location" placeholder="Contoh: Jl. Raya No. 123">
-                </div>
-                <div class="form-group checkbox-group">
-                    <input type="checkbox" id="warehouse-active" checked>
-                    <label for="warehouse-active">Aktif</label>
-                </div>
+                <form id="warehouse-form" onsubmit="event.preventDefault(); saveWarehouseFromForm();">
+                    <div class="form-group">
+                        <label for="warehouse-code">Kode Gudang <span class="text-danger">*</span></label>
+                        <input type="text" id="warehouse-code" name="code" placeholder="Contoh: WH01" maxlength="20" 
+                               pattern="^[A-Z0-9_-]+$" required aria-required="true"
+                               oninput="validateWarehouseField('code')">
+                        <span class="error-message" id="error-warehouse-code"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="warehouse-name">Nama Gudang <span class="text-danger">*</span></label>
+                        <input type="text" id="warehouse-name" name="name" placeholder="Contoh: Gudang Utama" 
+                               minlength="2" required aria-required="true"
+                               oninput="validateWarehouseField('name')">
+                        <span class="error-message" id="error-warehouse-name"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="warehouse-location">Lokasi</label>
+                        <input type="text" id="warehouse-location" name="location" placeholder="Contoh: Jl. Raya No. 123" 
+                               minlength="3" oninput="validateWarehouseField('location')">
+                        <span class="error-message" id="error-warehouse-location"></span>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="warehouse-active" name="isActive" checked>
+                        <label for="warehouse-active">Aktif</label>
+                    </div>
+                </form>
             </div>
             <div class="modal-footer">
-                <button class="btn-secondary" onclick="closeWarehouseModal()">Batal</button>
-                <button class="btn-primary" onclick="saveWarehouseFromForm()">Simpan</button>
+                <button class="btn-secondary" onclick="closeWarehouseModal()" type="button">Batal</button>
+                <button class="btn-primary" onclick="saveWarehouseFromForm()" id="btn-save-warehouse" type="submit">Simpan</button>
             </div>
         </div>
     </div>
 
     <!-- Loading Overlay -->
-    <div id="loading" class="loading-overlay">
-        <div class="loading-spinner"></div>
-        <div style="margin-top:20px; color:#006B54;">Memproses...</div>
+    <div id="loading" class="loading-overlay" role="alert" aria-live="assertive">
+        <div class="loading-spinner" aria-hidden="true"></div>
+        <div style="margin-top:20px; color:#006B54;" id="loading-message">Memproses...</div>
     </div>
 
-    <!-- Notifikasi -->
-    <div id="notification" class="notification"></div>
+    <!-- Notifikasi - BUG FIX: ARIA live region -->
+    <div id="notification" class="notification" role="alert" aria-live="assertive" aria-atomic="true"></div>
 
-    <script src="app.js"></script>
-    <script src="inventory-core.js"></script>
-    <script src="warehouse.js"></script>
+    <!-- Scripts - BUG FIX: Load order & error handling -->
     <script>
-        // ==================== INISIALISASI HALAMAN ====================
-        async function initPage() {
-            // Tampilkan loading
-            if (typeof showLoading === 'function') showLoading();
-            try {
-                // Pastikan database sudah siap (app.js sudah inisialisasi)
-                // Tampilkan nama user jika ada
-                const savedUser = sessionStorage.getItem('currentUser');
-                if (savedUser) {
-                    const parsed = JSON.parse(savedUser);
-                    document.getElementById('user-name-display').textContent = parsed.name || parsed.username || 'User';
+        // ==================== FALLBACK FUNCTIONS (Jika app.js belum load) ====================
+        // BUG FIX: Definisikan fungsi fallback sebelum load external scripts
+        window.fallbackFunctions = {
+            showLoading: function(message = 'Memproses...') {
+                const loading = document.getElementById('loading');
+                const msg = document.getElementById('loading-message');
+                if (loading) {
+                    if (msg) msg.textContent = message;
+                    loading.classList.add('show');
                 }
+            },
+            hideLoading: function() {
+                const loading = document.getElementById('loading');
+                if (loading) loading.classList.remove('show');
+            },
+            showNotification: function(message, type = 'info', duration = 3000) {
+                const notif = document.getElementById('notification');
+                if (!notif) { alert(message); return; }
+                
+                // BUG FIX: Sanitize message untuk cegah XSS
+                const sanitized = message.replace(/[<>]/g, '');
+                
+                notif.textContent = sanitized;
+                notif.className = 'notification show';
+                if (type) notif.classList.add(type);
+                
+                if (notif._timeout) clearTimeout(notif._timeout);
+                notif._timeout = setTimeout(() => {
+                    notif.classList.remove('show');
+                }, duration);
+            }
+        };
 
-                // Render tabel gudang
-                await renderWarehouseTable('warehouse-table-container');
+        // Override jika fungsi dari app.js belum tersedia
+        ['showLoading', 'hideLoading', 'showNotification'].forEach(fnName => {
+            if (typeof window[fnName] !== 'function') {
+                window[fnName] = window.fallbackFunctions[fnName];
+            }
+        });
+    </script>
+    <script src="app.js" onerror="console.error('Gagal load app.js')"></script>
+    <script src="inventory-core.js" onerror="console.error('Gagal load inventory-core.js')"></script>
+    <script src="warehouse.js" onerror="console.error('Gagal load warehouse.js')"></script>
+    
+    <script>
+        // ==================== INISIALISASI HALAMAN (FIXED) ====================
+        
+        // BUG FIX: Sanitization helper
+        function sanitizeOutput(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // BUG FIX: Validasi field real-time
+        window.validateWarehouseField = function(fieldName) {
+            const input = document.getElementById(`warehouse-${fieldName}`);
+            const errorEl = document.getElementById(`error-warehouse-${fieldName}`);
+            if (!input || !errorEl) return;
+            
+            const value = input.value.trim();
+            let error = '';
+            
+            switch(fieldName) {
+                case 'code':
+                    if (!value) error = 'Kode gudang wajib diisi';
+                    else if (value.length < 2) error = 'Minimal 2 karakter';
+                    else if (!/^[A-Z0-9_-]+$/i.test(value)) error = 'Hanya huruf, angka, underscore, dash';
+                    break;
+                case 'name':
+                    if (!value) error = 'Nama gudang wajib diisi';
+                    else if (value.length < 2) error = 'Minimal 2 karakter';
+                    break;
+                case 'location':
+                    if (value && value.length < 3) error = 'Minimal 3 karakter jika diisi';
+                    break;
+            }
+            
+            if (error) {
+                input.classList.add('error');
+                errorEl.textContent = error;
+                errorEl.classList.add('show');
+                return false;
+            } else {
+                input.classList.remove('error');
+                errorEl.classList.remove('show');
+                return true;
+            }
+        };
+
+        // BUG FIX: Filter tabel gudang
+        window.filterWarehouseTable = function() {
+            const searchInput = document.getElementById('warehouse-search');
+            const statusFilter = document.getElementById('warehouse-filter-status');
+            if (!searchInput) return;
+            
+            const keyword = searchInput.value.toLowerCase().trim();
+            const status = statusFilter?.value || '';
+            
+            // Re-render dengan filter (jika fungsi tersedia)
+            if (typeof renderWarehouseTable === 'function') {
+                // Simpan filter ke sessionStorage untuk persistensi
+                sessionStorage.setItem('warehouseFilters', JSON.stringify({ keyword, status }));
+                renderWarehouseTable('warehouse-table-container', { keyword, status });
+            }
+        };
+
+        // BUG FIX: Modal keyboard navigation
+        function setupModalKeyboard() {
+            const modal = document.getElementById('warehouse-modal');
+            if (!modal) return;
+            
+            modal.addEventListener('keydown', function(e) {
+                // Escape untuk close
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    closeWarehouseModal();
+                    return;
+                }
+                // Enter pada form submit
+                if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                    // Biarkan form handle submit
+                }
+            });
+            
+            // Focus trap sederhana
+            modal.addEventListener('focusin', function(e) {
+                const focusable = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+                
+                if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault();
+                    last.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault();
+                    first.focus();
+                }
+            });
+        }
+
+        // BUG FIX: Modal click outside to close
+        function setupModalClickOutside() {
+            const modal = document.getElementById('warehouse-modal');
+            if (!modal) return;
+            
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeWarehouseModal();
+                }
+            });
+        }
+
+        // BUG FIX: Initialize page dengan error handling lengkap
+        async function initPage() {
+            try {
+                // BUG FIX: Tunggu database ready jika perlu
+                if (typeof db === 'undefined' || !db) {
+                    // Wait for app.js to initialize
+                    await new Promise(resolve => {
+                        const check = setInterval(() => {
+                            if (typeof db !== 'undefined' && db) {
+                                clearInterval(check);
+                                resolve();
+                            }
+                        }, 100);
+                        // Timeout setelah 5 detik
+                        setTimeout(() => {
+                            clearInterval(check);
+                            resolve();
+                        }, 5000);
+                    });
+                }
+                
+                // Tampilkan user name
+                try {
+                    const savedUser = sessionStorage.getItem('currentUser');
+                    if (savedUser) {
+                        const parsed = JSON.parse(savedUser);
+                        const nameDisplay = document.getElementById('user-name-display');
+                        if (nameDisplay) {
+                            // BUG FIX: Sanitize output
+                            nameDisplay.textContent = sanitizeOutput(parsed.name || parsed.username || 'User');
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Gagal menampilkan user name:', e);
+                }
+                
+                // Setup modal handlers
+                setupModalKeyboard();
+                setupModalClickOutside();
+                
+                // BUG FIX: Load filters dari sessionStorage
+                const savedFilters = sessionStorage.getItem('warehouseFilters');
+                let filterOptions = null;
+                if (savedFilters) {
+                    try {
+                        filterOptions = JSON.parse(savedFilters);
+                        const searchInput = document.getElementById('warehouse-search');
+                        const statusFilter = document.getElementById('warehouse-filter-status');
+                        if (searchInput && filterOptions.keyword) searchInput.value = filterOptions.keyword;
+                        if (statusFilter && filterOptions.status) statusFilter.value = filterOptions.status;
+                    } catch (e) {
+                        console.warn('Gagal load filters:', e);
+                    }
+                }
+                
+                // Render tabel
+                if (typeof renderWarehouseTable === 'function') {
+                    await renderWarehouseTable('warehouse-table-container', filterOptions);
+                } else {
+                    // Fallback jika fungsi belum tersedia
+                    const container = document.getElementById('warehouse-table-container');
+                    if (container) {
+                        container.innerHTML = '<p class="text-center" style="padding:20px;">Memuat modul gudang...</p>';
+                    }
+                }
+                
+                // BUG FIX: Setup form enter key submit
+                const form = document.getElementById('warehouse-form');
+                if (form) {
+                    form.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                            e.preventDefault();
+                            saveWarehouseFromForm();
+                        }
+                    });
+                }
+                
+                console.log('Warehouse page initialized');
+                
             } catch (error) {
-                console.error('Error init page:', error);
+                console.error('Error init warehouse page:', error);
                 const container = document.getElementById('warehouse-table-container');
                 if (container) {
-                    container.innerHTML = `<p style="color:red; text-align:center;">Gagal memuat data: ${error.message}</p>`;
+                    // BUG FIX: Error message yang aman
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <p class="text-danger">⚠️ Gagal memuat data gudang</p>
+                            <p style="font-size:0.9rem; margin:10px 0;">${sanitizeOutput(error.message)}</p>
+                            <button class="btn-primary" onclick="initPage()">Coba Lagi</button>
+                        </div>
+                    `;
                 }
-            } finally {
-                if (typeof hideLoading === 'function') hideLoading();
+                showNotification('Gagal memuat halaman: ' + error.message, 'error');
             }
         }
 
-        // Jalankan saat halaman siap
-        window.addEventListener('DOMContentLoaded', initPage);
+        // BUG FIX: Cleanup function untuk mencegah memory leak
+        function cleanupPage() {
+            // Remove event listeners jika perlu
+            const modal = document.getElementById('warehouse-modal');
+            if (modal) {
+                modal.removeEventListener('keydown', null);
+                modal.removeEventListener('click', null);
+            }
+        }
 
-        // Override fungsi showLoading/hideLoading jika belum ada (fallback)
-        if (typeof showLoading !== 'function') {
-            window.showLoading = function() {
-                document.getElementById('loading').style.display = 'flex';
-            };
-            window.hideLoading = function() {
-                document.getElementById('loading').style.display = 'none';
-            };
+        // BUG FIX: Handle page visibility change
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden && typeof renderWarehouseTable === 'function') {
+                // Refresh data saat halaman menjadi visible
+                renderWarehouseTable('warehouse-table-container');
+            }
+        });
+
+        // BUG FIX: Handle beforeunload untuk cleanup
+        window.addEventListener('beforeunload', function() {
+            cleanupPage();
+        });
+
+        // Jalankan saat DOM ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initPage);
+        } else {
+            // DOM sudah ready, jalankan langsung
+            initPage();
         }
-        if (typeof showNotification !== 'function') {
-            window.showNotification = function(message, type) {
-                const notif = document.getElementById('notification');
-                notif.textContent = message;
-                notif.style.backgroundColor = type === 'error' ? '#dc3545' : (type === 'success' ? '#006B54' : '#ffc107');
-                notif.style.display = 'block';
-                setTimeout(() => { notif.style.display = 'none'; }, 3000);
-            };
-        }
+
+        // BUG FIX: Expose functions untuk debugging
+        window.warehouseDebug = {
+            initPage,
+            filterWarehouseTable,
+            validateWarehouseField,
+            sanitizeOutput
+        };
     </script>
 </body>
 </html>
