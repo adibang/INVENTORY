@@ -2542,11 +2542,17 @@ function closeTransaksiPage() {
 // ==================== FUNGSI INIT WAREHOUSE SELECTOR (BARU) ====================
 function initWarehouseSelector() {
     const select = document.getElementById('warehouse-select');
-    if (!select) return;
+    if (!select) {
+        console.warn('Elemen warehouse-select tidak ditemukan');
+        return;
+    }
 
-    // Hapus event listener lama jika ada (gunakan clone untuk bersih)
-    select.replaceWith(select.cloneNode(true));
-    const newSelect = document.getElementById('warehouse-select');
+    // Hapus atribut onchange lama jika masih menempel
+    select.removeAttribute('onchange');
+
+    // Clone untuk menghapus event listener lama
+    const newSelect = select.cloneNode(true);
+    select.parentNode.replaceChild(newSelect, select);
 
     // Kosongkan dan isi opsi
     newSelect.innerHTML = '<option value="" disabled selected>-- Pilih Gudang --</option>';
@@ -2570,15 +2576,62 @@ function initWarehouseSelector() {
     // Pasang event listener
     newSelect.addEventListener('change', function(e) {
         const newId = parseInt(e.target.value);
+        console.log('Warehouse berubah menjadi:', newId); // Debug
         if (newId && newId !== selectedWarehouseId) {
             selectedWarehouseId = newId;
-            sessionStorage.setItem('selectedWarehouseId', selectedWarehouseId);
-            renderProductList();               // refresh tampilan produk dengan stok gudang baru
+            try {
+                sessionStorage.setItem('selectedWarehouseId', selectedWarehouseId);
+            } catch (err) {}
+            
+            // Refresh tampilan produk dengan stok gudang baru
+            renderProductList();
+            
+            // Jika halaman keranjang terbuka, perbarui informasi batch
             if (document.getElementById('cart-page')?.style.display === 'block') {
-                renderCartPage();               // update informasi batch di keranjang
+                renderCartPage();
             }
         }
     });
+
+    console.log('Warehouse selector diinisialisasi ulang');
+}
+
+// Pastikan fungsi ini dipanggil setiap kali halaman transaksi dibuka
+function openTransaksiPage() {
+    const mainContent = document.querySelector('.main-content');
+    const transaksiPage = document.getElementById('transaksi-page');
+    const cartPage = document.getElementById('cart-page');
+    const paymentPage = document.getElementById('payment-page');
+    
+    if (mainContent) mainContent.style.display = 'none';
+    if (transaksiPage) transaksiPage.style.display = 'block';
+    if (cartPage) cartPage.style.display = 'none';
+    if (paymentPage) paymentPage.style.display = 'none';
+
+    if (!warehouses || warehouses.length === 0) {
+        loadWarehouses().then(() => {
+            initWarehouseSelector();
+            finishOpenTransaksiPage();
+        }).catch(err => {
+            console.error('Gagal load warehouses:', err);
+            initWarehouseSelector();
+            finishOpenTransaksiPage();
+        });
+    } else {
+        initWarehouseSelector();
+        finishOpenTransaksiPage();
+    }
+}
+
+// Setelah semua inisialisasi, pastikan render produk menggunakan selectedWarehouseId terbaru
+function renderProductList(itemsToRender = null) {
+    const container = document.getElementById('product-container');
+    if (!container) return;
+    
+    const items = itemsToRender || kasirItems;
+    console.log('Render produk untuk gudang:', selectedWarehouseId); // Debug
+    
+    // ... kode render sisanya ...
 }
 
 function getPriceForQty(item, qty) {
