@@ -2274,30 +2274,14 @@ function openTransaksiPage() {
     if (cartPage) cartPage.style.display = 'none';
     if (paymentPage) paymentPage.style.display = 'none';
     
-    // Pastikan data gudang sudah dimuat
-    if (!warehouses || warehouses.length === 0) {
-        loadWarehouses().then(() => {
-            finishOpenTransaksiPage(); // set selectedWarehouseId dulu
-            initWarehouseSelector();   // baru inisialisasi dropdown
-        }).catch(err => {
-            console.error('Gagal load warehouses:', err);
-            finishOpenTransaksiPage();
-            initWarehouseSelector();
-        });
-    } else {
-        finishOpenTransaksiPage();
-        initWarehouseSelector();
-    }
-}
-
-function finishOpenTransaksiPage() {
-    // Set selectedWarehouseId dari sessionStorage atau default
+    // Inisialisasi dropdown gudang (langsung dari DB)
+    initWarehouseSelector();
+    
+    // Set selectedWarehouseId dari sessionStorage jika ada
     try {
         const savedId = sessionStorage.getItem('selectedWarehouseId');
-        if (savedId && warehouses.some(w => w.id == savedId)) {
+        if (savedId) {
             selectedWarehouseId = parseInt(savedId);
-        } else if (warehouses.length > 0 && !selectedWarehouseId) {
-            selectedWarehouseId = warehouses[0].id;
         }
     } catch (e) {}
     
@@ -2323,71 +2307,79 @@ function closeTransaksiPage() {
 }
 
 // ==================== FUNGSI INIT WAREHOUSE SELECTOR (BUG FIX #4) ====================
-function initWarehouseSelector() {
+async function initWarehouseSelector() {
     const select = document.getElementById('warehouse-select');
     if (!select) {
         console.warn('Elemen warehouse-select tidak ditemukan');
         return;
     }
-    
-    // Hapus atribut onchange lama jika masih menempel
-    select.removeAttribute('onchange');
-    
-    // Clone untuk menghapus event listener lama
-    const newSelect = select.cloneNode(true);
+
+    // Hapus event listener lama dengan mengganti elemen (clone)
+    const newSelect = select.cloneNode(false); // clone tanpa children
     select.parentNode.replaceChild(newSelect, select);
-    
-    // Kosongkan dan isi opsi
-    newSelect.innerHTML = '<option value="" disabled selected>-- Pilih Gudang --</option>';
-    if (warehouses && warehouses.length > 0) {
-        warehouses.forEach(w => {
-            if (w.isActive === false) return;
-            const option = document.createElement('option');
-            option.value = w.id;
-            option.textContent = `${w.code} - ${w.name}`;
-            if (selectedWarehouseId && w.id == selectedWarehouseId) {
-                option.selected = true;
+
+    // Tampilkan loading
+    newSelect.innerHTML = '<option value="" disabled selected>Memuat gudang...</option>';
+    newSelect.disabled = true;
+
+    try {
+        // Ambil semua gudang dari database, filter yang aktif
+        const allWarehouses = await dbGetAll(STORES.WAREHOUSES);
+        const activeWarehouses = allWarehouses.filter(w => w.isActive !== false);
+
+        // Kosongkan dan isi ulang
+        newSelect.innerHTML = '<option value="" disabled selected>-- Pilih Gudang --</option>';
+
+        if (activeWarehouses.length === 0) {
+            newSelect.innerHTML = '<option value="" disabled>-- Tidak ada gudang aktif --</option>';
+            newSelect.disabled = true;
+        } else {
+            activeWarehouses.forEach(w => {
+                const option = document.createElement('option');
+                option.value = w.id;
+                option.textContent = `${w.code} - ${w.name}`;
+                if (selectedWarehouseId && w.id == selectedWarehouseId) {
+                    option.selected = true;
+                }
+                newSelect.appendChild(option);
+            });
+            newSelect.disabled = false;
+        }
+
+        // Pasang event listener baru
+        const changeHandler = async function(e) {
+            try {
+                const newId = parseInt(e.target.value);
+                if (newId && newId !== selectedWarehouseId) {
+                    selectedWarehouseId = newId;
+                    sessionStorage.setItem('selectedWarehouseId', selectedWarehouseId);
+                    
+                    // Muat ulang stok untuk gudang baru
+                    await loadItemStocks();
+                    renderProductList();
+                    
+                    // Jika halaman cart sedang terbuka, perbarui tampilan (opsional)
+                    if (document.getElementById('cart-page')?.style.display === 'block') {
+                        renderCartPage();
+                    }
+                }
+            } catch (error) {
+                console.error('Error saat mengganti gudang:', error);
+                showNotification('Gagal memuat stok gudang', 'error');
             }
-            newSelect.appendChild(option);
+        };
+        newSelect.addEventListener('change', changeHandler);
+
+        // Simpan untuk cleanup
+        eventListenersCleanup.push(() => {
+            newSelect.removeEventListener('change', changeHandler);
         });
-        newSelect.disabled = false;
-    } else {
-        newSelect.innerHTML = '<option value="" disabled>Memuat gudang...</option>';
+
+    } catch (error) {
+        console.error('Gagal memuat gudang:', error);
+        newSelect.innerHTML = '<option value="" disabled>-- Gagal memuat gudang --</option>';
         newSelect.disabled = true;
     }
-    
-    // Pasang event listener dengan cleanup dan error handling
-    const changeHandler = async function(e) {
-        try {
-            const newId = parseInt(e.target.value);
-            console.log('Warehouse berubah menjadi:', newId);
-            if (newId && newId !== selectedWarehouseId) {
-                selectedWarehouseId = newId;
-                try {
-                    sessionStorage.setItem('selectedWarehouseId', selectedWarehouseId);
-                } catch (err) {}
-                
-                // Muat ulang stok untuk gudang baru
-                await loadItemStocks();
-                renderProductList();
-                if (document.getElementById('cart-page')?.style.display === 'block') {
-                    renderCartPage();
-                }
-            }
-        } catch (error) {
-            console.error('Error saat mengganti gudang:', error);
-            showNotification('Gagal memuat stok gudang', 'error');
-        }
-    };
-    
-    newSelect.addEventListener('change', changeHandler);
-    
-    // Simpan cleanup function
-    eventListenersCleanup.push(() => {
-        newSelect.removeEventListener('change', changeHandler);
-    });
-    
-    console.log('Warehouse selector diinisialisasi ulang');
 }
 
 // ==================== FUNGSI RENDER PRODUCT LIST (BUG FIX #2) ====================
