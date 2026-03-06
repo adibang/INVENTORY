@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MUDA - Laporan</title>
+    <title>MUDA - Laporan Lengkap</title>
     <style>
         /* ==================== RESET & BASE ==================== */
         * {
@@ -307,6 +307,28 @@
             background: #f5f5f5;
         }
 
+        /* Sorting untuk tabel produk */
+        #productTable th {
+            cursor: pointer;
+            user-select: none;
+        }
+        #productTable th .sort-icon {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            margin-left: 5px;
+            vertical-align: middle;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"/></svg>') no-repeat center;
+            background-size: contain;
+            opacity: 0.7;
+        }
+        #productTable th.sort-asc .sort-icon {
+            transform: rotate(180deg);
+        }
+        #productTable th.sort-desc .sort-icon {
+            transform: rotate(0deg);
+        }
+
         /* Modal */
         .modal-overlay {
             display: none;
@@ -339,6 +361,12 @@
             font-size: 1.5rem;
             cursor: pointer;
             color: #333;
+        }
+        .item-detail {
+            background: #f9f9f9;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
         }
         .error-message {
             color: #dc3545;
@@ -384,7 +412,7 @@
         </div>
     </header>
 
-    <!-- Sidebar Drawer -->
+    <!-- Sidebar Drawer (menu lengkap dari file pertama + bundle sudah ada) -->
     <div class="sidebar" id="sidebar">
         <div class="menu-header">PENJUALAN</div>
         <button class="active" onclick="showSection('summary')">
@@ -479,7 +507,7 @@
     <div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
 
     <div class="main-content">
-        <!-- Filter Section (untuk laporan yang membutuhkan tanggal) -->
+        <!-- Filter Section (gabungan: tanggal, gudang, metode pembayaran) -->
         <div class="filter-section" id="global-filter-section">
             <div class="filter-group">
                 <label>Tanggal Mulai</label>
@@ -495,12 +523,21 @@
                     <option value="all">Semua Gudang</option>
                 </select>
             </div>
+            <div class="filter-group">
+                <label>Metode Pembayaran</label>
+                <select id="paymentMethod">
+                    <option value="all">Semua</option>
+                    <option value="cash">Tunai</option>
+                    <option value="card">Kartu</option>
+                    <option value="transfer">Transfer</option>
+                </select>
+            </div>
             <div style="display: flex; gap: 10px;">
                 <button onclick="loadData()">Tampilkan</button>
             </div>
         </div>
 
-        <!-- Section: Ringkasan Penjualan -->
+        <!-- Section: Ringkasan Penjualan (dari file pertama, id sama) -->
         <div id="section-summary" class="report-section active">
             <div class="cards">
                 <div class="card"><div class="label">Total Penjualan</div><div class="value" id="totalSales">Rp 0</div></div>
@@ -526,7 +563,7 @@
             </div>
         </div>
 
-        <!-- Section: Penjualan per Produk -->
+        <!-- Section: Penjualan per Produk (dari file kedua dengan sorting) -->
         <div id="section-product" class="report-section">
             <div style="display: flex; justify-content: space-between; margin-bottom:15px;">
                 <h2 style="color:#006B54;">Penjualan per Produk</h2>
@@ -534,13 +571,22 @@
             </div>
             <div class="table-responsive">
                 <table id="productTable">
-                    <thead><tr><th>Nama Produk</th><th>Jumlah Terjual</th><th>Total Pendapatan</th><th>Rata-rata Harga</th><th>Laba Kotor</th><th>Kontribusi</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th data-sort="productName">Nama Produk <span class="sort-icon"></span></th>
+                            <th data-sort="totalQtyBase">Jumlah Terjual <span class="sort-icon"></span></th>
+                            <th data-sort="totalRevenue">Total Pendapatan <span class="sort-icon"></span></th>
+                            <th data-sort="avgPrice">Rata-rata Harga <span class="sort-icon"></span></th>
+                            <th data-sort="grossProfit">Estimasi Laba Kotor <span class="sort-icon"></span></th>
+                            <th data-sort="contribution">Kontribusi (%) <span class="sort-icon"></span></th>
+                        </tr>
+                    </thead>
                     <tbody id="productTableBody"></tbody>
                 </table>
             </div>
         </div>
 
-        <!-- Section: Daftar Transaksi -->
+        <!-- Section: Daftar Transaksi (dari file kedua dengan event detail) -->
         <div id="section-transactions" class="report-section">
             <h2 style="color:#006B54;">Daftar Transaksi</h2>
             <div class="table-responsive">
@@ -554,7 +600,7 @@
         <!-- Section: Laba Rugi -->
         <div id="section-profitloss" class="report-section">
             <div class="cards">
-                <div class="card"><div class="label">Total Penjualan</div><div class="value" id="pl-total-sales">Rp 0</div></div>
+                <div class="card"><div class="label">Total Penjualan Bersih</div><div class="value" id="pl-total-sales">Rp 0</div></div>
                 <div class="card"><div class="label">Total Diskon</div><div class="value" id="pl-total-discount">Rp 0</div></div>
                 <div class="card"><div class="label">Total Pajak</div><div class="value" id="pl-total-tax">Rp 0</div></div>
                 <div class="card"><div class="label">HPP</div><div class="value" id="pl-hpp">Rp 0</div></div>
@@ -573,15 +619,19 @@
             <div class="chart-box"><canvas id="cashFlowChart"></canvas></div>
         </div>
 
-        <!-- Section: Penjualan Bundle -->
+        <!-- Section: Penjualan Bundle (dari file kedua dengan komponen) -->
         <div id="section-bundle" class="report-section">
             <h2 style="color:#006B54;">Penjualan Bundle</h2>
             <div class="table-responsive">
-                <table id="bundleTable"><thead><tr><th>Nama Bundle</th><th>Jumlah Terjual</th><th>Total Pendapatan</th><th>Komponen</th></tr></thead><tbody id="bundleTableBody"></tbody></table>
+                <table id="bundleTable">
+                    <thead><tr><th>Nama Bundle</th><th>Jumlah Terjual</th><th>Total Pendapatan</th><th>Komponen</th></tr></thead>
+                    <tbody id="bundleTableBody"></tbody>
+                </table>
             </div>
         </div>
 
-        <!-- Section: Kartu Stok -->
+        <!-- ===== SECTION INVENTORI (dari file pertama) ===== -->
+        <!-- Kartu Stok -->
         <div id="section-stockCard" class="report-section">
             <h2 style="color:#006B54;">Kartu Stok</h2>
             <div class="filter-group" style="margin-bottom:15px;">
@@ -593,7 +643,7 @@
             </div>
         </div>
 
-        <!-- Section: Stok per Gudang -->
+        <!-- Stok per Gudang -->
         <div id="section-stockByWarehouse" class="report-section">
             <h2 style="color:#006B54;">Stok per Gudang</h2>
             <div class="filter-group" style="margin-bottom:15px;">
@@ -605,7 +655,7 @@
             </div>
         </div>
 
-        <!-- Section: Stok Menipis -->
+        <!-- Stok Menipis -->
         <div id="section-lowStock" class="report-section">
             <h2 style="color:#006B54;">Stok Menipis</h2>
             <div class="table-responsive">
@@ -613,7 +663,7 @@
             </div>
         </div>
 
-        <!-- Section: Nilai Stok -->
+        <!-- Nilai Stok -->
         <div id="section-stockValue" class="report-section">
             <h2 style="color:#006B54;">Nilai Stok</h2>
             <div class="cards">
@@ -625,7 +675,7 @@
             </div>
         </div>
 
-        <!-- Section: Mutasi Stok -->
+        <!-- Mutasi Stok -->
         <div id="section-stockMovements" class="report-section">
             <h2 style="color:#006B54;">Mutasi Stok</h2>
             <div class="filter-group" style="margin-bottom:15px;">
@@ -644,7 +694,7 @@
             </div>
         </div>
 
-        <!-- Section: Histori Stocktake -->
+        <!-- Histori Stocktake -->
         <div id="section-stocktake" class="report-section">
             <h2 style="color:#006B54;">Histori Stocktake</h2>
             <div class="table-responsive">
@@ -652,7 +702,7 @@
             </div>
         </div>
 
-        <!-- Section: Laporan Konsinyasi -->
+        <!-- Laporan Konsinyasi -->
         <div id="section-consignment" class="report-section">
             <h2 style="color:#006B54;">Laporan Konsinyasi</h2>
             <div class="filter-group" style="margin-bottom:15px;">
@@ -662,7 +712,7 @@
             <div id="consignmentReportDetail"></div>
         </div>
 
-        <!-- Section: Produksi -->
+        <!-- Produksi -->
         <div id="section-production" class="report-section">
             <h2 style="color:#006B54;">Laporan Produksi</h2>
             <div class="table-responsive">
@@ -670,7 +720,7 @@
             </div>
         </div>
 
-        <!-- Section: Bill of Materials -->
+        <!-- Bill of Materials -->
         <div id="section-bom" class="report-section">
             <h2 style="color:#006B54;">Bill of Materials</h2>
             <div class="table-responsive">
@@ -691,11 +741,13 @@
     </div>
 
     <script>
-        // ==================== GLOBAL VARIABLES ====================
+        // ==================== GLOBAL VARIABLES (gabungan) ====================
         const DB_NAME = 'POSKasirDB';
         const DB_VERSION = 22; // versi terbaru
         let db = null;
         let currentUser = null;
+
+        // Data utama (dari file pertama)
         let salesData = [];
         let purchasesData = [];
         let kasirItems = [];
@@ -709,6 +761,16 @@
         let boms = [];
         let customers = [];
         let suppliers = [];
+
+        // Data pendukung untuk laporan penjualan (dari file kedua)
+        let categoryMap = {};
+        let itemCategoryMap = {};
+        let productMap = {};
+        let productAggregatedData = [];
+        let productSortColumn = 'totalRevenue';
+        let productSortDirection = 'desc';
+        let bundles = [];
+        let bundleSalesData = [];
 
         // Chart instances
         let salesChartInstance = null;
@@ -833,13 +895,614 @@
         function formatRupiah(angka) {
             return 'Rp ' + angka.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
         }
-
         function formatDate(dateStr) {
             return new Date(dateStr).toLocaleString('id-ID');
         }
 
-        // ==================== LOAD DATA UNTUK SECTION TERTENTU ====================
+        // ==================== FUNGSI LAPORAN PENJUALAN (dari file kedua) ====================
+        async function fetchSales(start, end, method) {
+            return new Promise((resolve, reject) => {
+                if (!db) { reject('Database tidak tersedia'); return; }
+                if (!db.objectStoreNames.contains('sales')) { resolve([]); return; }
+                const transaction = db.transaction(['sales'], 'readonly');
+                const store = transaction.objectStore('sales');
+                const index = store.index('date');
+                const range = IDBKeyRange.bound(start + 'T00:00:00.000Z', end + 'T23:59:59.999Z');
+                const request = index.getAll(range);
+                request.onsuccess = () => {
+                    let data = request.result || [];
+                    if (method !== 'all') {
+                        data = data.filter(item => {
+                            if (Array.isArray(item.payments)) {
+                                return item.payments.some(p => p.method === method);
+                            }
+                            return item.paymentMethod === method;
+                        });
+                    }
+                    resolve(data);
+                };
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async function fetchPurchases(start, end) {
+            return new Promise((resolve, reject) => {
+                if (!db) { reject('Database tidak tersedia'); return; }
+                if (!db.objectStoreNames.contains('purchases')) { resolve([]); return; }
+                const transaction = db.transaction(['purchases'], 'readonly');
+                const store = transaction.objectStore('purchases');
+                const index = store.index('date');
+                const range = IDBKeyRange.bound(start + 'T00:00:00.000Z', end + 'T23:59:59.999Z');
+                const request = index.getAll(range);
+                request.onsuccess = () => resolve(request.result || []);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        function calculateSummary(data) {
+            let totalSales = 0;
+            let totalTransactions = data.length;
+            let totalOutstanding = 0;
+            data.forEach(item => {
+                totalSales += item.total;
+                totalOutstanding += item.outstandingAdded || 0;
+            });
+            const average = totalTransactions > 0 ? totalSales / totalTransactions : 0;
+            return { totalSales, totalTransactions, average, totalOutstanding };
+        }
+
+        function renderChart(data, start, end) {
+            const ctx = document.getElementById('salesChart').getContext('2d');
+            if (salesChartInstance) salesChartInstance.destroy();
+            const dateMap = new Map();
+            const startDate = new Date(start);
+            const endDate = new Date(end);
+            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                const dateStr = d.toISOString().split('T')[0];
+                dateMap.set(dateStr, 0);
+            }
+            data.forEach(item => {
+                const dateStr = new Date(item.date).toISOString().split('T')[0];
+                if (dateMap.has(dateStr)) {
+                    dateMap.set(dateStr, dateMap.get(dateStr) + item.total);
+                }
+            });
+            const labels = Array.from(dateMap.keys()).sort();
+            const values = labels.map(date => dateMap.get(date));
+            salesChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: { labels, datasets: [{ label: 'Total Penjualan', data: values, backgroundColor: '#006B54', borderRadius: 5 }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { tooltip: { callbacks: { label: (ctx) => formatRupiah(ctx.raw) } } },
+                    scales: { y: { ticks: { callback: (val) => formatRupiah(val) } } }
+                }
+            });
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('tableBody');
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Tidak ada data</td></tr>';
+                return;
+            }
+            let html = '';
+            data.forEach(trx => {
+                if (!trx.id) return;
+                const date = new Date(trx.date).toLocaleString('id-ID');
+                const metode = Array.isArray(trx.payments) ? trx.payments.map(p => p.method).join(', ') : (trx.paymentMethod || '-');
+                html += `<tr><td>${trx.transactionNumber || '-'}</td><td>${date}</td><td>${trx.customerName || '-'}</td><td>${formatRupiah(trx.total || 0)}</td><td>${metode}</td><td><button class="detail-btn" data-id="${trx.id}">🔻</button></td></tr>`;
+            });
+            tbody.innerHTML = html;
+        }
+
+        function showDetail(id) {
+            const idStr = String(id).trim();
+            const trx = salesData.find(t => String(t.id) === idStr);
+            if (!trx) { alert('Data transaksi tidak ditemukan'); return; }
+            let itemsHtml = '';
+            if (trx.items && Array.isArray(trx.items)) {
+                trx.items.forEach(item => {
+                    itemsHtml += `<div class="item-detail"><strong>${item.itemName || 'Produk'}</strong><br>Jumlah: ${item.qty || 0} ${item.unitConversion ? '(' + item.unitConversion.name + ')' : ''} ${item.weightGram ? '(' + item.weightGram + ' g)' : ''}<br>Harga Satuan: ${formatRupiah(item.pricePerUnit || 0)}<br>Subtotal: ${formatRupiah(item.subtotal || 0)}</div>`;
+                });
+            } else { itemsHtml = '<p>Tidak ada item</p>'; }
+            document.getElementById('modalBody').innerHTML = `
+                <p><strong>No. Transaksi:</strong> ${trx.transactionNumber || '-'}</p>
+                <p><strong>Tanggal:</strong> ${new Date(trx.date).toLocaleString('id-ID')}</p>
+                <p><strong>Pelanggan:</strong> ${trx.customerName || '-'}</p>
+                <p><strong>Subtotal:</strong> ${formatRupiah(trx.subtotal || 0)}</p>
+                <p><strong>Diskon:</strong> ${formatRupiah(trx.discount || 0)}</p>
+                <p><strong>Pajak:</strong> ${formatRupiah(trx.tax || 0)}</p>
+                <p><strong>Total:</strong> ${formatRupiah(trx.total || 0)}</p>
+                <p><strong>Metode:</strong> ${Array.isArray(trx.payments) ? trx.payments.map(p => p.method).join(', ') : (trx.paymentMethod || '-')}</p>
+                <p><strong>Dibayar:</strong> ${formatRupiah(trx.paidAmount || 0)}</p>
+                <p><strong>Kembalian:</strong> ${formatRupiah(trx.change || 0)}</p>
+                <p><strong>Piutang ditambahkan:</strong> ${formatRupiah(trx.outstandingAdded || 0)}</p>
+                <h3>Item yang dibeli:</h3> ${itemsHtml}
+            `;
+            document.getElementById('detailModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').style.display = 'none';
+        }
+
+        // Event listener untuk detail
+        document.addEventListener('DOMContentLoaded', function() {
+            const transactionsTable = document.getElementById('transactionsTable');
+            if (transactionsTable) {
+                transactionsTable.addEventListener('click', function(e) {
+                    const btn = e.target.closest('.detail-btn');
+                    if (!btn) return;
+                    const id = btn.getAttribute('data-id');
+                    if (id) showDetail(id);
+                });
+            }
+        });
+
+        async function loadProducts() {
+            return new Promise((resolve, reject) => {
+                if (!db) { resolve(); return; }
+                const tx = db.transaction(['kasirItems'], 'readonly');
+                const store = tx.objectStore('kasirItems');
+                const request = store.getAll();
+                request.onsuccess = () => {
+                    const items = request.result || [];
+                    productMap = {};
+                    items.forEach(item => {
+                        productMap[item.id] = { name: item.name, hargaDasar: item.hargaDasar || 0, unitConversions: item.unitConversions || [] };
+                    });
+                    resolve();
+                };
+                request.onerror = reject;
+            });
+        }
+
+        async function loadCategoriesAndItems() {
+            return new Promise((resolve, reject) => {
+                if (!db) { resolve(); return; }
+                try {
+                    const catTx = db.transaction(['kasirCategories'], 'readonly');
+                    const catStore = catTx.objectStore('kasirCategories');
+                    const catRequest = catStore.getAll();
+                    catRequest.onsuccess = () => {
+                        const categories = catRequest.result || [];
+                        categoryMap = {};
+                        categories.forEach(cat => { categoryMap[cat.id] = cat.name; });
+                        const itemTx = db.transaction(['kasirItems'], 'readonly');
+                        const itemStore = itemTx.objectStore('kasirItems');
+                        const itemRequest = itemStore.getAll();
+                        itemRequest.onsuccess = () => {
+                            const items = itemRequest.result || [];
+                            itemCategoryMap = {};
+                            items.forEach(item => { if (item.categoryId) itemCategoryMap[item.id] = item.categoryId; });
+                            resolve();
+                        };
+                        itemRequest.onerror = reject;
+                    };
+                    catRequest.onerror = reject;
+                } catch (error) { reject(error); }
+            });
+        }
+
+        function aggregateProductSales(salesData) {
+            const productSales = {};
+            salesData.forEach(transaction => {
+                if (!transaction.items) return;
+                transaction.items.forEach(item => {
+                    if (item.isBundle) {
+                        const bundleSubtotal = item.subtotal || 0;
+                        let totalComponentCost = 0;
+                        const componentsWithQty = [];
+                        if (item.components && Array.isArray(item.components)) {
+                            item.components.forEach(comp => {
+                                const productId = comp.itemId;
+                                if (!productId) return;
+                                const productInfo = productMap[productId];
+                                if (!productInfo) return;
+                                let qtyBase = comp.qty * (item.qty || 1);
+                                if (comp.unitConversionId) {
+                                    const conv = productInfo.unitConversions?.find(u => u.id == comp.unitConversionId);
+                                    if (conv) qtyBase *= conv.value;
+                                }
+                                const cost = productInfo.hargaDasar * qtyBase;
+                                totalComponentCost += cost;
+                                componentsWithQty.push({ productId, qtyBase, cost, productInfo });
+                            });
+                        }
+                        if (totalComponentCost > 0 && componentsWithQty.length > 0) {
+                            componentsWithQty.forEach(comp => {
+                                const { productId, qtyBase, cost } = comp;
+                                const allocationRatio = cost / totalComponentCost;
+                                const allocatedRevenue = bundleSubtotal * allocationRatio;
+                                const allocatedProfit = allocatedRevenue - cost;
+                                if (!productSales[productId]) {
+                                    productSales[productId] = { productId, productName: comp.productInfo.name, totalQtyBase: 0, totalRevenue: 0, grossProfit: 0 };
+                                }
+                                productSales[productId].totalQtyBase += qtyBase;
+                                productSales[productId].totalRevenue += allocatedRevenue;
+                                productSales[productId].grossProfit += allocatedProfit;
+                            });
+                        }
+                    } else {
+                        const productId = item.itemId;
+                        if (!productId) return;
+                        let qtyBase = item.qty || 0;
+                        if (item.unitConversion && item.unitConversion.value) qtyBase *= item.unitConversion.value;
+                        const revenue = item.subtotal || 0;
+                        const productInfo = productMap[productId] || { name: item.itemName || 'Unknown', hargaDasar: 0 };
+                        if (!productSales[productId]) {
+                            productSales[productId] = { productId, productName: productInfo.name, totalQtyBase: 0, totalRevenue: 0, grossProfit: 0 };
+                        }
+                        productSales[productId].totalQtyBase += qtyBase;
+                        productSales[productId].totalRevenue += revenue;
+                        const cost = (productInfo.hargaDasar || 0) * qtyBase;
+                        productSales[productId].grossProfit += (revenue - cost);
+                    }
+                });
+            });
+            const totalRevenueAll = salesData.reduce((sum, t) => sum + (t.total || 0), 0);
+            return Object.values(productSales).map(p => ({
+                ...p,
+                avgPrice: p.totalQtyBase > 0 ? p.totalRevenue / p.totalQtyBase : 0,
+                contribution: totalRevenueAll > 0 ? (p.totalRevenue / totalRevenueAll) * 100 : 0
+            }));
+        }
+
+        function renderProductTable(data) {
+            const tbody = document.getElementById('productTableBody');
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Tidak ada data produk</td></tr>';
+                return;
+            }
+            const sorted = [...data].sort((a, b) => {
+                let aVal = a[productSortColumn], bVal = b[productSortColumn];
+                if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+                if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+                return (aVal < bVal ? -1 : 1) * (productSortDirection === 'asc' ? 1 : -1);
+            });
+            let html = '';
+            sorted.forEach(p => {
+                const laba = p.grossProfit > 0 ? formatRupiah(p.grossProfit) : '-';
+                html += `<tr><td>${p.productName}</td><td>${p.totalQtyBase.toFixed(2)}</td><td>${formatRupiah(p.totalRevenue)}</td><td>${formatRupiah(p.avgPrice)}</td><td>${laba}</td><td>${p.contribution.toFixed(2)}%</td></tr>`;
+            });
+            tbody.innerHTML = html;
+            document.querySelectorAll('#productTable th').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+                if (th.dataset.sort === productSortColumn) {
+                    th.classList.add(productSortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+                }
+            });
+        }
+
+        function initProductTableSort() {
+            document.querySelectorAll('#productTable th[data-sort]').forEach(th => {
+                th.addEventListener('click', () => {
+                    const sortKey = th.dataset.sort;
+                    if (sortKey === productSortColumn) {
+                        productSortDirection = productSortDirection === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        productSortColumn = sortKey;
+                        productSortDirection = 'desc';
+                    }
+                    renderProductTable(productAggregatedData);
+                });
+            });
+        }
+
+        function exportProductCSV() {
+            if (!productAggregatedData || productAggregatedData.length === 0) { alert('Tidak ada data produk'); return; }
+            let csv = 'Nama Produk,Jumlah Terjual,Total Pendapatan,Rata-rata Harga,Estimasi Laba Kotor,Kontribusi (%)\n';
+            productAggregatedData.forEach(p => {
+                csv += `"${p.productName}",${p.totalQtyBase.toFixed(2)},${p.totalRevenue},${p.avgPrice.toFixed(2)},${p.grossProfit > 0 ? p.grossProfit : 0},${p.contribution.toFixed(2)}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'laporan_penjualan_per_produk.csv';
+            link.click();
+        }
+
+        function aggregateCategorySales(salesData) {
+            const categoryRevenue = {};
+            salesData.forEach(transaction => {
+                if (!transaction.items) return;
+                transaction.items.forEach(item => {
+                    if (item.isBundle) return;
+                    const catId = itemCategoryMap[item.itemId];
+                    if (!catId) return;
+                    const revenue = item.subtotal || 0;
+                    categoryRevenue[catId] = (categoryRevenue[catId] || 0) + revenue;
+                });
+            });
+            return Object.entries(categoryRevenue).map(([id, total]) => ({ categoryName: categoryMap[id] || 'Tanpa Kategori', total })).sort((a, b) => b.total - a.total);
+        }
+
+        function renderCategoryChart(data) {
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            if (categoryChartInstance) categoryChartInstance.destroy();
+            if (!data || data.length === 0) { ctx.fillText('Tidak ada data kategori', 150, 150); return; }
+            const labels = data.map(d => d.categoryName);
+            const values = data.map(d => d.total);
+            const total = values.reduce((a, b) => a + b, 0);
+            categoryChartInstance = new Chart(ctx, {
+                type: 'pie',
+                data: { labels, datasets: [{ data: values, backgroundColor: ['#006B54','#FFA500','#FF6B6B','#4ECDC4','#45B7D1','#96CEB4','#FFEEAD','#D4A5A5','#9B59B6','#3498DB'], borderWidth: 1 }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: { callbacks: { label: (ctx) => { const perc = ((ctx.raw / total) * 100).toFixed(2); return `${ctx.label}: ${formatRupiah(ctx.raw)} (${perc}%)`; } } },
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        function calculateProfitLoss(salesData) {
+            let totalSales = 0, totalDiscount = 0, totalTax = 0, totalHPP = 0;
+            salesData.forEach(trx => {
+                totalSales += trx.total || 0;
+                totalDiscount += trx.discount || 0;
+                totalTax += trx.tax || 0;
+                if (trx.items) {
+                    trx.items.forEach(item => {
+                        if (item.isBundle && item.components) {
+                            item.components.forEach(comp => {
+                                const product = productMap[comp.itemId];
+                                if (product && product.hargaDasar > 0) {
+                                    let qtyBase = comp.qty * item.qty;
+                                    if (comp.unitConversionId) {
+                                        const conv = product.unitConversions?.find(u => u.id == comp.unitConversionId);
+                                        if (conv) qtyBase *= conv.value;
+                                    }
+                                    totalHPP += product.hargaDasar * qtyBase;
+                                }
+                            });
+                        } else if (item.cost !== undefined) {
+                            totalHPP += (item.qty || 0) * item.cost;
+                        }
+                    });
+                }
+            });
+            const grossProfit = totalSales - totalHPP;
+            return { totalSales, totalDiscount, totalTax, totalHPP, grossProfit };
+        }
+
+        function renderProfitLossChart(data) {
+            const ctx = document.getElementById('profitLossChart').getContext('2d');
+            if (profitLossChartInstance) profitLossChartInstance.destroy();
+            if (data.totalSales === 0) { ctx.fillText('Tidak ada data', 150, 150); return; }
+            profitLossChartInstance = new Chart(ctx, {
+                type: 'pie',
+                data: { labels: ['HPP', 'Laba Kotor'], datasets: [{ data: [data.totalHPP, data.grossProfit], backgroundColor: ['#FFA500', '#006B54'], borderWidth: 1 }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { tooltip: { callbacks: { label: (ctx) => { const perc = ((ctx.raw / data.totalSales) * 100).toFixed(2); return `${ctx.label}: ${formatRupiah(ctx.raw)} (${perc}%)`; } } } }
+                }
+            });
+        }
+
+        function calculateCashFlow(salesData, purchasesData) {
+            let income = 0, expense = 0;
+            salesData.forEach(trx => income += trx.paidAmount || 0);
+            purchasesData.forEach(trx => expense += trx.paidAmount || 0);
+            return { income, expense, net: income - expense };
+        }
+
+        async function renderCashFlowChart(salesData, purchasesData, start, end) {
+            const ctx = document.getElementById('cashFlowChart').getContext('2d');
+            if (cashFlowChartInstance) cashFlowChartInstance.destroy();
+            const monthMap = new Map();
+            const startDate = new Date(start);
+            const endDate = new Date(end);
+            for (let d = new Date(startDate); d <= endDate; d.setMonth(d.getMonth() + 1)) {
+                const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                monthMap.set(monthKey, { income: 0, expense: 0 });
+            }
+            salesData.forEach(trx => {
+                const date = new Date(trx.date);
+                const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                if (monthMap.has(monthKey)) monthMap.get(monthKey).income += trx.paidAmount || 0;
+            });
+            purchasesData.forEach(trx => {
+                const date = new Date(trx.date);
+                const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                if (monthMap.has(monthKey)) monthMap.get(monthKey).expense += trx.paidAmount || 0;
+            });
+            const labels = Array.from(monthMap.keys()).sort();
+            const incomeData = labels.map(m => monthMap.get(m).income);
+            const expenseData = labels.map(m => monthMap.get(m).expense);
+            cashFlowChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: { labels, datasets: [{ label: 'Pemasukan', data: incomeData, backgroundColor: '#006B54' }, { label: 'Pengeluaran', data: expenseData, backgroundColor: '#FF6B6B' }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { tooltip: { callbacks: { label: (ctx) => formatRupiah(ctx.raw) } } },
+                    scales: { y: { ticks: { callback: (val) => formatRupiah(val) } } }
+                }
+            });
+        }
+
+        async function loadBundles() {
+            if (!db) return;
+            const tx = db.transaction(['bundles'], 'readonly');
+            const store = tx.objectStore('bundles');
+            bundles = (await new Promise((res, rej) => { const r = store.getAll(); r.onsuccess = () => res(r.result); r.onerror = rej; })) || [];
+        }
+
+        function aggregateBundleSales(salesData) {
+            const bundleMap = {};
+            salesData.forEach(trx => {
+                if (!trx.items) return;
+                trx.items.forEach(item => {
+                    if (item.isBundle && item.bundleId) {
+                        const bundleId = item.bundleId;
+                        if (!bundleMap[bundleId]) {
+                            const bundle = bundles.find(b => b.id === bundleId);
+                            bundleMap[bundleId] = { bundleId, bundleName: item.itemName, totalQty: 0, totalRevenue: 0, components: bundle ? bundle.components : (item.components || []) };
+                        }
+                        bundleMap[bundleId].totalQty += item.qty;
+                        bundleMap[bundleId].totalRevenue += item.subtotal;
+                    }
+                });
+            });
+            return Object.values(bundleMap);
+        }
+
+        function renderBundleTable(bundleSales) {
+            const tbody = document.getElementById('bundleTableBody');
+            if (!bundleSales || bundleSales.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Tidak ada data bundle</td></tr>';
+                return;
+            }
+            let html = '';
+            bundleSales.forEach(b => {
+                const komponen = b.components.map(c => {
+                    const item = productMap[c.itemId];
+                    return item ? `${item.name} x${c.qty}` : '';
+                }).filter(Boolean).join(', ');
+                html += `<tr><td>${b.bundleName}</td><td>${b.totalQty}</td><td>${formatRupiah(b.totalRevenue)}</td><td>${komponen}</td></tr>`;
+            });
+            tbody.innerHTML = html;
+        }
+
+        // ==================== FUNGSI LAPORAN INVENTORI (placeholder, dari file pertama) ====================
+        async function loadStockCard() {
+            const select = document.getElementById('stockCardItem');
+            select.innerHTML = '<option value="">-- Pilih Item --</option>';
+            kasirItems.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.id;
+                opt.textContent = `${item.code} - ${item.name}`;
+                select.appendChild(opt);
+            });
+            select.onchange = async () => {
+                const itemId = parseInt(select.value);
+                if (!itemId) return;
+                const movements = stockMovements.filter(m => m.item_id === itemId);
+                movements.sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+                let balance = 0;
+                let html = '';
+                for (let m of movements) {
+                    balance += m.quantity;
+                    html += `<tr><td>${formatDate(m.created_at)}</td><td>${m.movement_type}</td><td>${m.reference_type} #${m.reference_id}</td><td>${m.quantity > 0 ? m.quantity : ''}</td><td>${m.quantity < 0 ? -m.quantity : ''}</td><td>${balance}</td><td>${m.notes || ''}</td></tr>`;
+                }
+                document.getElementById('stockCardBody').innerHTML = html;
+            };
+        }
+
+        async function loadStockByWarehouse() {
+            const whFilter = document.getElementById('stockWarehouseFilter');
+            whFilter.innerHTML = '<option value="all">Semua Gudang</option>';
+            warehouses.forEach(w => {
+                const opt = document.createElement('option');
+                opt.value = w.id;
+                opt.textContent = `${w.code} - ${w.name}`;
+                whFilter.appendChild(opt);
+            });
+            whFilter.onchange = () => {
+                const whId = whFilter.value;
+                const filtered = whId === 'all' ? stocks : stocks.filter(s => s.warehouse_id == whId);
+                let html = '';
+                filtered.forEach(s => {
+                    const item = kasirItems.find(i => i.id === s.item_id);
+                    if (!item) return;
+                    html += `<tr><td>${item.name}</td><td>${item.code}</td><td>${s.batch_id || '-'}</td><td>${s.quantity}</td><td>${s.min_stock || 0}</td><td>${s.max_stock || '-'}</td></tr>`;
+                });
+                document.getElementById('stockWarehouseBody').innerHTML = html;
+            };
+            whFilter.dispatchEvent(new Event('change'));
+        }
+
+        async function loadLowStock() {
+            let html = '';
+            stocks.forEach(s => {
+                if (s.quantity < (s.min_stock || 0)) {
+                    const item = kasirItems.find(i => i.id === s.item_id);
+                    const warehouse = warehouses.find(w => w.id === s.warehouse_id);
+                    html += `<tr><td>${warehouse ? warehouse.name : '-'}</td><td>${item ? item.name : '-'}</td><td>${s.quantity}</td><td>${s.min_stock || 0}</td><td>${(s.min_stock || 0) - s.quantity}</td></tr>`;
+                }
+            });
+            document.getElementById('lowStockBody').innerHTML = html || '<tr><td colspan="5">Tidak ada stok menipis</td></tr>';
+        }
+
+        async function loadStockValue() {
+            let totalValue = 0, totalQty = 0, html = '';
+            for (let s of stocks) {
+                const item = kasirItems.find(i => i.id === s.item_id);
+                if (!item) continue;
+                const hpp = item.hargaDasar || 0;
+                const value = hpp * s.quantity;
+                totalValue += value;
+                totalQty += s.quantity;
+                html += `<tr><td>${item.name}</td><td>${s.quantity}</td><td>${formatRupiah(hpp)}</td><td>${formatRupiah(value)}</td></tr>`;
+            }
+            document.getElementById('totalStockValue').textContent = formatRupiah(totalValue);
+            document.getElementById('avgHPP').textContent = totalQty > 0 ? formatRupiah(totalValue / totalQty) : 'Rp 0';
+            document.getElementById('stockValueBody').innerHTML = html;
+        }
+
+        async function loadStockMovements() {
+            const movements = stockMovements.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+            let html = '';
+            for (let m of movements.slice(0, 200)) {
+                const item = kasirItems.find(i => i.id === m.item_id);
+                const warehouse = warehouses.find(w => w.id === m.warehouse_id);
+                html += `<tr><td>${formatDate(m.created_at)}</td><td>${m.movement_type}</td><td>${item ? item.name : '-'}</td><td>${warehouse ? warehouse.name : '-'}</td><td>${m.quantity}</td><td>${m.reference_type} #${m.reference_id}</td><td>${m.created_by || '-'}</td></tr>`;
+            }
+            document.getElementById('movementBody').innerHTML = html;
+        }
+
+        async function loadStocktakeHistory() {
+            let html = '';
+            for (let st of stocktakes.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt))) {
+                const warehouse = warehouses.find(w => w.id === st.warehouse_id);
+                const diffCount = st.items ? st.items.filter(i => i.difference !== 0).length : 0;
+                const diffValue = st.items ? st.items.reduce((sum, i) => sum + (i.difference * (i.unit_cost || 0)), 0) : 0;
+                html += `<tr><td>${st.stocktake_number}</td><td>${warehouse ? warehouse.name : '-'}</td><td>${formatDate(st.start_date)}</td><td>${st.status}</td><td>${diffCount}</td><td>${formatRupiah(diffValue)}</td></tr>`;
+            }
+            document.getElementById('stocktakeHistoryBody').innerHTML = html;
+        }
+
+        async function loadConsignmentReport() {
+            const select = document.getElementById('consignmentReportSelect');
+            select.innerHTML = '<option value="">-- Pilih Konsinyasi --</option>';
+            consignments.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = `${c.consignment_number} - ${c.supplier_id}`;
+                select.appendChild(opt);
+            });
+            select.onchange = () => { /* implementasi jika ada fungsi generate */ };
+        }
+
+        async function loadProductionReport() {
+            // placeholder
+        }
+
+        async function loadBOMReport() {
+            // placeholder
+        }
+
+        // ==================== LOAD SECTION DATA ====================
         function loadSectionData(sectionId) {
+            // Untuk laporan penjualan, kita gunakan data yang sudah difilter di salesData
+            const start = document.getElementById('startDate').value;
+            const end = document.getElementById('endDate').value;
+            const method = document.getElementById('paymentMethod').value;
+            // Filter ulang salesData berdasarkan tanggal dan metode (karena loadAllData sudah mengambil semua)
+            // Tapi kita sudah punya salesData global yang mungkin belum terfilter. Untuk efisiensi, kita filter manual.
+            let filteredSales = salesData.filter(trx => {
+                const tgl = new Date(trx.date).toISOString().split('T')[0];
+                return tgl >= start && tgl <= end;
+            });
+            if (method !== 'all') {
+                filteredSales = filteredSales.filter(trx => {
+                    if (Array.isArray(trx.payments)) return trx.payments.some(p => p.method === method);
+                    return trx.paymentMethod === method;
+                });
+            }
+
             switch(sectionId) {
                 case 'summary':
                 case 'dailyChart':
@@ -849,7 +1512,32 @@
                 case 'profitloss':
                 case 'cashflow':
                 case 'bundle':
-                    loadSalesData();
+                    // Hitung ulang semua laporan penjualan dengan filteredSales
+                    const summary = calculateSummary(filteredSales);
+                    document.getElementById('totalSales').textContent = formatRupiah(summary.totalSales);
+                    document.getElementById('totalTransactions').textContent = summary.totalTransactions;
+                    document.getElementById('averageTransaction').textContent = formatRupiah(summary.average);
+                    document.getElementById('totalOutstanding').textContent = formatRupiah(summary.totalOutstanding);
+                    renderChart(filteredSales, start, end);
+                    renderTable(filteredSales);
+                    productAggregatedData = aggregateProductSales(filteredSales);
+                    renderProductTable(productAggregatedData);
+                    const catData = aggregateCategorySales(filteredSales);
+                    renderCategoryChart(catData);
+                    const pl = calculateProfitLoss(filteredSales);
+                    document.getElementById('pl-total-sales').textContent = formatRupiah(pl.totalSales);
+                    document.getElementById('pl-total-discount').textContent = formatRupiah(pl.totalDiscount);
+                    document.getElementById('pl-total-tax').textContent = formatRupiah(pl.totalTax);
+                    document.getElementById('pl-hpp').textContent = formatRupiah(pl.totalHPP);
+                    document.getElementById('pl-gross-profit').textContent = formatRupiah(pl.grossProfit);
+                    renderProfitLossChart(pl);
+                    const cf = calculateCashFlow(filteredSales, purchasesData);
+                    document.getElementById('cf-income').textContent = formatRupiah(cf.income);
+                    document.getElementById('cf-expense').textContent = formatRupiah(cf.expense);
+                    document.getElementById('cf-net').textContent = formatRupiah(cf.net);
+                    renderCashFlowChart(filteredSales, purchasesData, start, end);
+                    bundleSalesData = aggregateBundleSales(filteredSales);
+                    renderBundleTable(bundleSalesData);
                     break;
                 case 'stockCard':
                     loadStockCard();
@@ -881,199 +1569,25 @@
             }
         }
 
-        // ==================== LAPORAN PENJUALAN (dari laporan sebelumnya) ====================
-        // ... (implementasi fungsi-fungsi yang sama seperti di file asli) ...
-        // Untuk menghemat ruang, kita hanya beri placeholder. Seharusnya kita pindahkan kode dari laporan.html asli ke sini.
-        // Tapi karena sudah panjang, saya akan berikan ringkasan dan asumsikan fungsi-fungsi itu ada.
-
-        function loadSalesData() {
-            // implementasi seperti aslinya, menggunakan filter startDate dan endDate
-            // ...
-            alert('Fungsi loadSalesData harus diimplementasikan');
-        }
-
-        // ==================== LAPORAN STOK ====================
-        async function loadStockCard() {
-            const select = document.getElementById('stockCardItem');
-            select.innerHTML = '<option value="">-- Pilih Item --</option>';
-            kasirItems.forEach(item => {
-                const opt = document.createElement('option');
-                opt.value = item.id;
-                opt.textContent = `${item.code} - ${item.name}`;
-                select.appendChild(opt);
-            });
-            select.onchange = async () => {
-                const itemId = parseInt(select.value);
-                if (!itemId) return;
-                const movements = stockMovements.filter(m => m.item_id === itemId);
-                movements.sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
-                let balance = 0;
-                let html = '';
-                for (let m of movements) {
-                    balance += m.quantity;
-                    html += `<tr>
-                        <td>${formatDate(m.created_at)}</td>
-                        <td>${m.movement_type}</td>
-                        <td>${m.reference_type} #${m.reference_id}</td>
-                        <td>${m.quantity > 0 ? m.quantity : ''}</td>
-                        <td>${m.quantity < 0 ? -m.quantity : ''}</td>
-                        <td>${balance}</td>
-                        <td>${m.notes || ''}</td>
-                    </tr>`;
-                }
-                document.getElementById('stockCardBody').innerHTML = html;
-            };
-        }
-
-        async function loadStockByWarehouse() {
-            const whFilter = document.getElementById('stockWarehouseFilter');
-            whFilter.innerHTML = '<option value="all">Semua Gudang</option>';
-            warehouses.forEach(w => {
-                const opt = document.createElement('option');
-                opt.value = w.id;
-                opt.textContent = `${w.code} - ${w.name}`;
-                whFilter.appendChild(opt);
-            });
-            whFilter.onchange = () => {
-                const whId = whFilter.value;
-                const filtered = whId === 'all' ? stocks : stocks.filter(s => s.warehouse_id == whId);
-                let html = '';
-                filtered.forEach(s => {
-                    const item = kasirItems.find(i => i.id === s.item_id);
-                    if (!item) return;
-                    html += `<tr>
-                        <td>${item.name}</td>
-                        <td>${item.code}</td>
-                        <td>${s.batch_id || '-'}</td>
-                        <td>${s.quantity}</td>
-                        <td>${s.min_stock || 0}</td>
-                        <td>${s.max_stock || '-'}</td>
-                    </tr>`;
-                });
-                document.getElementById('stockWarehouseBody').innerHTML = html;
-            };
-            whFilter.dispatchEvent(new Event('change'));
-        }
-
-        async function loadLowStock() {
-            let html = '';
-            stocks.forEach(s => {
-                if (s.quantity < (s.min_stock || 0)) {
-                    const item = kasirItems.find(i => i.id === s.item_id);
-                    const warehouse = warehouses.find(w => w.id === s.warehouse_id);
-                    html += `<tr>
-                        <td>${warehouse ? warehouse.name : '-'}</td>
-                        <td>${item ? item.name : '-'}</td>
-                        <td>${s.quantity}</td>
-                        <td>${s.min_stock || 0}</td>
-                        <td>${(s.min_stock || 0) - s.quantity}</td>
-                    </tr>`;
-                }
-            });
-            document.getElementById('lowStockBody').innerHTML = html || '<tr><td colspan="5">Tidak ada stok menipis</td></tr>';
-        }
-
-        async function loadStockValue() {
-            let totalValue = 0;
-            let totalQty = 0;
-            let html = '';
-            for (let s of stocks) {
-                const item = kasirItems.find(i => i.id === s.item_id);
-                if (!item) continue;
-                const hpp = item.hargaDasar || 0;
-                const value = hpp * s.quantity;
-                totalValue += value;
-                totalQty += s.quantity;
-                html += `<tr>
-                    <td>${item.name}</td>
-                    <td>${s.quantity}</td>
-                    <td>${formatRupiah(hpp)}</td>
-                    <td>${formatRupiah(value)}</td>
-                </tr>`;
+        // ==================== LOAD DATA UTAMA ====================
+        async function loadData() {
+            const start = document.getElementById('startDate').value;
+            const end = document.getElementById('endDate').value;
+            if (!start || !end) { alert('Pilih tanggal mulai dan akhir'); return; }
+            if (new Date(start) > new Date(end)) { alert('Tanggal akhir harus setelah tanggal mulai'); return; }
+            try {
+                await loadAllData(); // ambil semua data dari DB
+                // Muat data pendukung untuk laporan penjualan
+                await loadProducts();
+                await loadCategoriesAndItems();
+                await loadBundles();
+                // Muat section yang sedang aktif
+                const activeSection = document.querySelector('.report-section.active')?.id.replace('section-', '') || 'summary';
+                loadSectionData(activeSection);
+            } catch (error) {
+                console.error(error);
+                alert('Gagal memuat data.');
             }
-            document.getElementById('totalStockValue').textContent = formatRupiah(totalValue);
-            document.getElementById('avgHPP').textContent = totalQty > 0 ? formatRupiah(totalValue / totalQty) : 'Rp 0';
-            document.getElementById('stockValueBody').innerHTML = html;
-        }
-
-        async function loadStockMovements() {
-            const movements = stockMovements.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
-            let html = '';
-            for (let m of movements.slice(0, 200)) { // batasi 200 terbaru
-                const item = kasirItems.find(i => i.id === m.item_id);
-                const warehouse = warehouses.find(w => w.id === m.warehouse_id);
-                html += `<tr>
-                    <td>${formatDate(m.created_at)}</td>
-                    <td>${m.movement_type}</td>
-                    <td>${item ? item.name : '-'}</td>
-                    <td>${warehouse ? warehouse.name : '-'}</td>
-                    <td>${m.quantity}</td>
-                    <td>${m.reference_type} #${m.reference_id}</td>
-                    <td>${m.created_by || '-'}</td>
-                </tr>`;
-            }
-            document.getElementById('movementBody').innerHTML = html;
-        }
-
-        async function loadStocktakeHistory() {
-            let html = '';
-            for (let st of stocktakes.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt))) {
-                const warehouse = warehouses.find(w => w.id === st.warehouse_id);
-                // hitung selisih total (bisa ambil dari item stocktake)
-                const items = await loadStocktakeItems(st.id); // butuh fungsi dari opname.js
-                const diffCount = items.filter(i => i.difference !== 0).length;
-                const diffValue = items.reduce((sum, i) => sum + (i.difference * (i.unit_cost || 0)), 0);
-                html += `<tr>
-                    <td>${st.stocktake_number}</td>
-                    <td>${warehouse ? warehouse.name : '-'}</td>
-                    <td>${formatDate(st.start_date)}</td>
-                    <td>${st.status}</td>
-                    <td>${diffCount}</td>
-                    <td>${formatRupiah(diffValue)}</td>
-                </tr>`;
-            }
-            document.getElementById('stocktakeHistoryBody').innerHTML = html;
-        }
-
-        // ==================== LAPORAN KONSINYASI ====================
-        async function loadConsignmentReport() {
-            const select = document.getElementById('consignmentReportSelect');
-            select.innerHTML = '<option value="">-- Pilih Konsinyasi --</option>';
-            consignments.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c.id;
-                opt.textContent = `${c.consignment_number} - ${c.supplier_id}`;
-                select.appendChild(opt);
-            });
-            select.onchange = async () => {
-                const id = parseInt(select.value);
-                if (!id) return;
-                // butuh fungsi generateConsignmentReport dari consignment.js
-                if (typeof generateConsignmentReport === 'function') {
-                    const report = await generateConsignmentReport(id);
-                    // tampilkan
-                }
-            };
-        }
-
-        // ==================== LAPORAN PRODUKSI ====================
-        async function loadProductionReport() {
-            // sederhana
-        }
-
-        // ==================== LAPORAN BOM ====================
-        async function loadBOMReport() {
-            // sederhana
-        }
-
-        // ==================== INISIALISASI ====================
-        async function init() {
-            await initDB();
-            const sessionOk = await checkSession();
-            if (!sessionOk) return;
-            await loadAllData();
-            setDefaultDates();
-            loadSectionData('summary');
         }
 
         function setDefaultDates() {
@@ -1084,26 +1598,29 @@
             document.getElementById('endDate').value = today.toISOString().split('T')[0];
         }
 
-        function loadData() {
-            // reload semua data berdasarkan filter
-            loadAllData().then(() => {
-                const active = document.querySelector('.report-section.active')?.id;
-                if (active) loadSectionData(active.replace('section-', ''));
-            });
-        }
-
         function exportAllCSV() {
-            alert('Fitur ekspor CSV akan segera hadir');
+            exportProductCSV(); // sederhana
         }
 
-        window.onload = init;
-        window.showSection = showSection;
-        window.toggleDrawer = toggleDrawer;
-        window.closeDrawer = closeDrawer;
-        window.logout = logout;
-        window.loadData = loadData;
-        window.exportAllCSV = exportAllCSV;
-        window.closeModal = function() { document.getElementById('detailModal').style.display = 'none'; };
+        window.onload = async () => {
+            setDefaultDates();
+            try {
+                await initDB();
+                const sessionOk = await checkSession();
+                if (!sessionOk) return;
+                await loadData(); // memuat data awal
+                initProductTableSort();
+            } catch (error) {
+                console.error(error);
+                document.getElementById('tableBody').innerHTML = `<tr><td colspan="6" class="error-message">Gagal mengakses database.</td></tr>`;
+            }
+        };
+
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal-overlay')) {
+                event.target.style.display = 'none';
+            }
+        };
     </script>
 </body>
 </html>
