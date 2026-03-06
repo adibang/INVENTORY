@@ -526,7 +526,9 @@ async function initDatabase() {
                     });
                     if (storeConfig.indexes) {
                         storeConfig.indexes.forEach(index => {
-                            store.createIndex(index.name, index.keyPath, { unique: index.unique || false });
+                            // Pastikan unique adalah boolean
+                            const options = { unique: index.unique === true };
+                            store.createIndex(index.name, index.keyPath, options);
                         });
                     }
                 }
@@ -2260,6 +2262,7 @@ async function addBundleToCart(bundleId) {
 }
 
 // ==================== FUNGSI TRANSAKSI KASIR (BUG FIX #1) ====================
+// BUG FIX #1: Perbaiki urutan inisialisasi warehouse selector
 function openTransaksiPage() {
     const mainContent = document.querySelector('.main-content');
     const transaksiPage = document.getElementById('transaksi-page');
@@ -2274,16 +2277,16 @@ function openTransaksiPage() {
     // Pastikan data gudang sudah dimuat
     if (!warehouses || warehouses.length === 0) {
         loadWarehouses().then(() => {
-            initWarehouseSelector();
-            finishOpenTransaksiPage();
+            finishOpenTransaksiPage(); // set selectedWarehouseId dulu
+            initWarehouseSelector();   // baru inisialisasi dropdown
         }).catch(err => {
             console.error('Gagal load warehouses:', err);
-            initWarehouseSelector();
             finishOpenTransaksiPage();
+            initWarehouseSelector();
         });
     } else {
-        initWarehouseSelector();
         finishOpenTransaksiPage();
+        initWarehouseSelector();
     }
 }
 
@@ -2353,22 +2356,27 @@ function initWarehouseSelector() {
         newSelect.disabled = true;
     }
     
-    // Pasang event listener dengan cleanup
+    // Pasang event listener dengan cleanup dan error handling
     const changeHandler = async function(e) {
-        const newId = parseInt(e.target.value);
-        console.log('Warehouse berubah menjadi:', newId);
-        if (newId && newId !== selectedWarehouseId) {
-            selectedWarehouseId = newId;
-            try {
-                sessionStorage.setItem('selectedWarehouseId', selectedWarehouseId);
-            } catch (err) {}
-            
-            // Muat ulang stok untuk gudang baru
-            await loadItemStocks();
-            renderProductList();
-            if (document.getElementById('cart-page')?.style.display === 'block') {
-                renderCartPage();
+        try {
+            const newId = parseInt(e.target.value);
+            console.log('Warehouse berubah menjadi:', newId);
+            if (newId && newId !== selectedWarehouseId) {
+                selectedWarehouseId = newId;
+                try {
+                    sessionStorage.setItem('selectedWarehouseId', selectedWarehouseId);
+                } catch (err) {}
+                
+                // Muat ulang stok untuk gudang baru
+                await loadItemStocks();
+                renderProductList();
+                if (document.getElementById('cart-page')?.style.display === 'block') {
+                    renderCartPage();
+                }
             }
+        } catch (error) {
+            console.error('Error saat mengganti gudang:', error);
+            showNotification('Gagal memuat stok gudang', 'error');
         }
     };
     
@@ -3703,13 +3711,15 @@ function renderProductList(itemsToRender = null) {
         container.innerHTML = '<div style="text-align:center; padding:20px;">Tidak ada produk</div>';
         return;
     }
+    // Gunakan warehouse yang valid, fallback ke gudang pertama jika perlu
+    const warehouseId = selectedWarehouseId || (warehouses.length > 0 ? warehouses[0].id : null);
     let html = '';
     if (productViewMode === 'list') {
         html = '<div class="product-list">';
         items.forEach(item => {
             let step = item.isWeighable ? '0.01' : '1';
             let min = '0.01';
-            const stock = getItemStock(item.id, selectedWarehouseId);
+            const stock = getItemStock(item.id, warehouseId);
             html += `
                 <div class="product-list-item" data-item-id="${item.id}">
                     <div class="name"><strong>${sanitizeHTML(item.name)}</strong></div>
@@ -3731,7 +3741,7 @@ function renderProductList(itemsToRender = null) {
         items.forEach(item => {
             let step = item.isWeighable ? '0.01' : '1';
             let min = '0.01';
-            const stock = getItemStock(item.id, selectedWarehouseId);
+            const stock = getItemStock(item.id, warehouseId);
             html += `
                 <div class="product-card" data-item-id="${item.id}">
                     <div class="product-image">
