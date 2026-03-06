@@ -551,7 +551,7 @@ async function initDatabase() {
                     });
                     if (storeConfig.indexes) {
                         storeConfig.indexes.forEach(index => {
-                            store.createIndex(index.name, index.keyPath, { unique: index.unique });
+                            store.createIndex(index.name, index.keyPath, { unique: storeConfig.unique });
                         });
                     }
                 }
@@ -2489,45 +2489,43 @@ function openTransaksiPage() {
     if (transaksiPage) transaksiPage.style.display = 'block';
     if (cartPage) cartPage.style.display = 'none';
     if (paymentPage) paymentPage.style.display = 'none';
-    
-    // BUG FIX: Pastikan warehouses loaded sebelum render selector
+
+    // Pastikan data gudang sudah dimuat
     if (!warehouses || warehouses.length === 0) {
-        // Try to load warehouses if not ready
         loadWarehouses().then(() => {
-            ensureWarehouseSelector();
+            initWarehouseSelector();          // inisialisasi dropdown
             finishOpenTransaksiPage();
         }).catch(err => {
             console.error('Gagal load warehouses:', err);
-            ensureWarehouseSelector(); // Tetap tampilkan dengan empty state
+            initWarehouseSelector();          // tetap jalankan dengan empty state
             finishOpenTransaksiPage();
         });
     } else {
-        ensureWarehouseSelector();
+        initWarehouseSelector();
         finishOpenTransaksiPage();
     }
 }
+
 function finishOpenTransaksiPage() {
-    // Restore selected warehouse dari sessionStorage jika ada
+    // Set selectedWarehouseId dari sessionStorage atau default
     try {
-        const savedWarehouseId = sessionStorage.getItem('selectedWarehouseId');
-        if (savedWarehouseId && warehouses.some(w => w.id == savedWarehouseId)) {
-            selectedWarehouseId = parseInt(savedWarehouseId);
+        const savedId = sessionStorage.getItem('selectedWarehouseId');
+        if (savedId && warehouses.some(w => w.id == savedId)) {
+            selectedWarehouseId = parseInt(savedId);
         } else if (warehouses.length > 0 && !selectedWarehouseId) {
             selectedWarehouseId = warehouses[0].id;
         }
-    } catch (e) {
-        console.warn('Gagal restore selected warehouse:', e);
-    }
-    
+    } catch (e) {}
+
     currentFilteredItems = [...kasirItems];
     renderProductList(currentFilteredItems);
-    
+
     const barcodeInput = document.getElementById('barcode-input');
     if (barcodeInput) {
         barcodeInput.value = '';
         setTimeout(() => barcodeInput.focus(), 100);
     }
-    
+
     renderCartPage();
     updatePiutangButtonCart();
     closeDrawer();
@@ -2541,106 +2539,46 @@ function closeTransaksiPage() {
     if (mainContent) mainContent.style.display = 'block';
 }
 
-function ensureWarehouseSelector() {
-    const header = document.querySelector('.transaksi-header-right');
-    if (!header) {
-        console.warn('Element .transaksi-header-right tidak ditemukan');
-        return;
+// ==================== FUNGSI INIT WAREHOUSE SELECTOR (BARU) ====================
+function initWarehouseSelector() {
+    const select = document.getElementById('warehouse-select');
+    if (!select) return;
+
+    // Hapus event listener lama jika ada (gunakan clone untuk bersih)
+    select.replaceWith(select.cloneNode(true));
+    const newSelect = document.getElementById('warehouse-select');
+
+    // Kosongkan dan isi opsi
+    newSelect.innerHTML = '<option value="" disabled selected>-- Pilih Gudang --</option>';
+    if (warehouses && warehouses.length > 0) {
+        warehouses.forEach(w => {
+            if (w.isActive === false) return;
+            const option = document.createElement('option');
+            option.value = w.id;
+            option.textContent = `${w.code} - ${w.name}`;
+            if (selectedWarehouseId && w.id == selectedWarehouseId) {
+                option.selected = true;
+            }
+            newSelect.appendChild(option);
+        });
+        newSelect.disabled = false;
+    } else {
+        newSelect.innerHTML = '<option value="" disabled>Memuat gudang...</option>';
+        newSelect.disabled = true;
     }
-    
-    // Hapus select lama jika ada (untuk refresh data)
-    const existingSelect = document.getElementById('warehouse-select');
-    if (existingSelect) {
-        existingSelect.remove();
-    }
-    
-    const select = document.createElement('select');
-    select.id = 'warehouse-select';
-    select.className = 'form-input';
-    select.style.width = '150px';
-    select.style.marginRight = '10px';
-    select.setAttribute('aria-label', 'Pilih Gudang');
-    
-    // Event handler untuk perubahan gudang
-    select.onchange = (e) => {
-        const newWarehouseId = parseInt(e.target.value);
-        if (newWarehouseId && newWarehouseId !== selectedWarehouseId) {
-            selectedWarehouseId = newWarehouseId;
-            // Simpan ke sessionStorage untuk persistensi
-            try {
-                sessionStorage.setItem('selectedWarehouseId', selectedWarehouseId);
-            } catch (err) {}
-            // Refresh product list dengan stok gudang baru
-            renderProductList();
-            // Refresh cart display untuk update info batch
+
+    // Pasang event listener
+    newSelect.addEventListener('change', function(e) {
+        const newId = parseInt(e.target.value);
+        if (newId && newId !== selectedWarehouseId) {
+            selectedWarehouseId = newId;
+            sessionStorage.setItem('selectedWarehouseId', selectedWarehouseId);
+            renderProductList();               // refresh tampilan produk dengan stok gudang baru
             if (document.getElementById('cart-page')?.style.display === 'block') {
-                renderCartPage();
+                renderCartPage();               // update informasi batch di keranjang
             }
         }
-    };
-    
-    // BUG FIX: Populate options dari warehouses array
-    populateWarehouseSelect(select, selectedWarehouseId);
-    
-    // Insert ke DOM
-    const customerBtn = document.getElementById('customer-select-btn');
-    if (customerBtn) {
-        header.insertBefore(select, customerBtn);
-    } else {
-        header.prepend(select);
-    }
-}
-function populateWarehouseSelect(selectElement, selectedId) {
-    if (!selectElement) return;
-    
-    // Clear existing options
-    selectElement.innerHTML = '';
-    
-    // Default option
-    const defaultOption = document.createElement('option');
-    defaultOption.value = '';
-    defaultOption.textContent = '-- Pilih Gudang --';
-    defaultOption.disabled = true;
-    defaultOption.selected = !selectedId;
-    selectElement.appendChild(defaultOption);
-    
-    // Populate dari warehouses array
-    if (!warehouses || warehouses.length === 0) {
-        // Tampilkan pesan loading/error
-        const option = document.createElement('option');
-        option.value = '';
-        option.textContent = 'Memuat gudang...';
-        option.disabled = true;
-        selectElement.appendChild(option);
-        return;
-    }
-    
-    warehouses.forEach(w => {
-        // Skip gudang tidak aktif (opsional)
-        if (w.isActive === false) return;
-        
-        const option = document.createElement('option');
-        option.value = w.id;
-        // Sanitize output untuk cegah XSS
-        option.textContent = `${sanitizeInput(w.code)} - ${sanitizeInput(w.name)}`;
-        
-        if (selectedId && w.id == selectedId) {
-            option.selected = true;
-        }
-        selectElement.appendChild(option);
     });
-    
-    // Disable select jika tidak ada gudang aktif
-    selectElement.disabled = warehouses.filter(w => w.isActive !== false).length === 0;
-}
-
-// BUG FIX: Fungsi untuk refresh warehouse selector setelah data load
-function refreshWarehouseSelector() {
-    const select = document.getElementById('warehouse-select');
-    if (select) {
-        const currentValue = select.value;
-        populateWarehouseSelect(select, currentValue ? parseInt(currentValue) : selectedWarehouseId);
-    }
 }
 
 function getPriceForQty(item, qty) {
@@ -5119,7 +5057,7 @@ async function initApp() {
         await loadBundles();
         
         await loadWarehouses();
-        refreshWarehouseSelector();
+        // Tidak perlu panggil initWarehouseSelector di sini, nanti saat transaksi
         await loadItemStocks();
         await loadItemBatches();
         await loadItemSerials();
@@ -5337,7 +5275,7 @@ window.addEventListener('beforeunload', () => {
 window.onWarehouseDataChanged = function() {
     // Refresh dropdown jika halaman transaksi aktif
     if (document.getElementById('transaksi-page')?.style.display === 'block') {
-        refreshWarehouseSelector();
+        initWarehouseSelector();
     }
     // Update product list jika gudang berubah
     if (selectedWarehouseId) {
@@ -5354,9 +5292,77 @@ if (originalSaveWarehouse) {
         // Reload warehouses array
         await loadWarehouses();
         // Refresh UI
-        if (typeof refreshWarehouseSelector === 'function') {
-            refreshWarehouseSelector();
+        if (typeof initWarehouseSelector === 'function') {
+            initWarehouseSelector();
         }
         return result;
     };
 }
+
+// ==================== TAMBAHKAN FUNGSI GLOBAL UNTUK AKSES DARI HTML ====================
+window.toggleSubMenu = toggleSubMenu;
+window.closeSubMenu = closeSubMenu;
+window.closeDrawer = closeDrawer;
+window.toggleDrawer = toggleDrawer;
+window.logout = logout;
+window.bypassLogin = bypassLogin;
+window.openTransaksiPage = openTransaksiPage;
+window.closeTransaksiPage = closeTransaksiPage;
+window.openCartPage = openCartPage;
+window.closeCartPage = closeCartPage;
+window.openPaymentPage = openPaymentPage;
+window.closePaymentPage = closePaymentPage;
+window.processPayment = processPayment;
+window.processPaymentWithPiutang = processPaymentWithPiutang;
+window.closeConfirmPiutangModal = closeConfirmPiutangModal;
+window.openSelectCustomerModal = openSelectCustomerModal;
+window.closeSelectCustomerModal = closeSelectCustomerModal;
+window.selectCustomer = selectCustomer;
+window.addOutstandingToCart = addOutstandingToCart;
+window.saveDraftTransaction = saveDraftTransaction;
+window.confirmSaveDraft = confirmSaveDraft;
+window.closePendingCodeModal = closePendingCodeModal;
+window.validatePendingCode = validatePendingCode;
+window.showSettingsModal = showSettingsModal;
+window.closeSettingsModal = closeSettingsModal;
+window.exportData = exportData;
+window.importData = importData;
+window.clearAllData = clearAllData;
+window.forceResetDatabase = forceResetDatabase;
+window.saveReceiptConfig = saveReceiptConfig;
+window.saveBarcodeConfigFromUI = saveBarcodeConfigFromUI;
+window.openAddUserModal = openAddUserModal;
+window.openEditUserModal = openEditUserModal;
+window.closeUserModal = closeUserModal;
+window.saveUser = saveUser;
+window.deleteUser = deleteUser;
+window.openBundleModal = openBundleModal;
+window.closeBundleModal = closeBundleModal;
+window.openInventoryStokModal = openInventoryStokModal;
+window.openInventoryOpnameModal = openInventoryOpnameModal;
+window.openInventoryLaporanModal = closeInventoryModal; // fungsi sama?
+window.closeInventoryModal = closeInventoryModal;
+window.filterInventoryTable = filterInventoryTable;
+window.openStockOpnameForItem = openStockOpnameForItem;
+window.updateStock = updateStock;
+window.openPendingTransactionsModal = openPendingTransactionsModal;
+window.closePendingTransactionsModal = closePendingTransactionsModal;
+window.loadPendingTransaction = loadPendingTransaction;
+window.deletePendingTransactionPrompt = deletePendingTransactionPrompt;
+window.openLaporanPage = openLaporanPage;
+window.openPembelianPage = openPembelianPage;
+window.goHome = goHome;
+window.openDriveBackupPage = openDriveBackupPage;
+window.closeDriveBackupPage = closeDriveBackupPage;
+window.togglePrinter = togglePrinter;
+window.printReceipt = printReceipt;
+window.setProductViewMode = setProductViewMode;
+window.filterProductList = filterProductList;
+window.processBarcode = processBarcode;
+window.adjustQty = adjustQty;
+window.removeFromCart = removeFromCart;
+window.updatePaymentSummary = updatePaymentSummary;
+window.onWarehouseChange = function() {
+    // Tidak digunakan lagi, tapi biarkan untuk kompatibilitas
+};
+window.initWarehouseSelector = initWarehouseSelector;
