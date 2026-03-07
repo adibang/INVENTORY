@@ -862,6 +862,11 @@
     <!-- ==================== NOTIFICATION ==================== -->
     <div id="notification"></div>
 
+    <!-- ==================== SCRIPT TAMBAHAN (MODIFICATION) ==================== -->
+    <!-- Memuat script inventori dan gudang -->
+    <script src="inventory-core.js" onerror="console.error('Gagal load inventory-core.js')"></script>
+    <script src="warehouse.js" onerror="console.error('Gagal load warehouse.js')"></script>
+
     <script>
         // ==================== KONFIGURASI DATABASE ====================
         const DB_NAME = 'POSKasirDB';
@@ -913,6 +918,9 @@
         let editingConversionIndex = -1;
 
         let selectItemCallback = null;
+
+        // MODIFICATION: Tambahkan variabel warehouses
+        let warehouses = [];
 
         // ==================== FUNGSI DRAWER ====================
         function toggleDrawer() {
@@ -1042,6 +1050,11 @@
                         const bomStore = db.createObjectStore(STORES.BILL_OF_MATERIALS, { keyPath: 'id', autoIncrement: true });
                         bomStore.createIndex('product_id', 'product_id', { unique: true });
                     }
+                    // MODIFICATION: Pastikan store warehouses sudah ada (dari versi sebelumnya)
+                    if (!db.objectStoreNames.contains(STORES.WAREHOUSES)) {
+                        const whStore = db.createObjectStore(STORES.WAREHOUSES, { keyPath: 'id', autoIncrement: true });
+                        whStore.createIndex('code', 'code', { unique: true });
+                    }
                 };
             });
         }
@@ -1148,6 +1161,21 @@
             } catch (error) {
                 console.error('Error loading bundles:', error);
                 bundles = [];
+            }
+        }
+
+        // MODIFICATION: Fungsi untuk memuat gudang (dari warehouse.js akan tersedia)
+        async function loadWarehouses() {
+            try {
+                if (typeof window.loadWarehouses === 'function') {
+                    warehouses = await window.loadWarehouses();
+                } else {
+                    warehouses = await dbGetAll(STORES.WAREHOUSES);
+                }
+                return warehouses;
+            } catch (error) {
+                console.error('Error loading warehouses:', error);
+                warehouses = [];
             }
         }
 
@@ -1608,11 +1636,8 @@
             renderCategories('');
         }
 
-        // ==================== FORM KATEGORI (TAMBAH/EDIT) ====================
-        function showCategoryForm(categoryId) {
-            editingCategoryId = categoryId || null;
-            const isEdit = editingCategoryId !== null;
-            const title = isEdit ? 'Edit Kategori' : 'Tambah Kategori';
+        function showAddCategoryPage() {
+            editingCategoryId = null;
             const html = `
                 <div class="content-card">
                     <h2 class="page-title">
@@ -1622,7 +1647,7 @@
                                 <polyline points="12 19 5 12 12 5"></polyline>
                             </svg>
                         </button>
-                        ${title}
+                        Tambah Kategori
                     </h2>
                     <form id="category-form" onsubmit="event.preventDefault();">
                         <div class="form-group">
@@ -1641,21 +1666,20 @@
                 </div>
             `;
             document.getElementById('master-content').innerHTML = html;
-            if (isEdit) {
-                const category = kasirCategories.find(c => c.id === editingCategoryId);
-                if (category) {
-                    document.getElementById('category-name').value = category.name;
-                    document.getElementById('category-description').value = category.description || '';
-                }
-            }
-        }
-
-        function showAddCategoryPage() {
-            showCategoryForm(null);
         }
 
         function showEditCategoryPage(id) {
-            showCategoryForm(id);
+            const category = kasirCategories.find(c => c.id === id);
+            if (!category) {
+                navigateTo('listCategories');
+                return;
+            }
+            editingCategoryId = id;
+            showAddCategoryPage();
+            setTimeout(() => {
+                document.getElementById('category-name').value = category.name;
+                document.getElementById('category-description').value = category.description || '';
+            }, 0);
         }
 
         // ==================== FUNGSI SAVE KATEGORI (DIPERBAIKI) ====================
@@ -1694,25 +1718,6 @@
                 navigateTo('listCategories');
             } catch (error) {
                 showNotification('Gagal menyimpan: ' + error.message, 'error');
-            }
-        }
-
-        async function deleteCategoryPrompt(id) {
-            if (confirm('Hapus kategori ini? Item dengan kategori ini akan kehilangan kategori.')) {
-                try {
-                    await dbDelete(STORES.KASIR_CATEGORIES, id);
-                    const itemsToUpdate = kasirItems.filter(i => i.categoryId === id);
-                    for (let item of itemsToUpdate) {
-                        item.categoryId = null;
-                        await dbPut(STORES.KASIR_ITEMS, item);
-                    }
-                    await loadKasirCategories();
-                    await loadKasirItems();
-                    showNotification('Kategori dihapus', 'success');
-                    showCategoryListPage();
-                } catch (error) {
-                    showNotification('Gagal hapus: ' + error.message, 'error');
-                }
             }
         }
 
@@ -1757,11 +1762,8 @@
             document.getElementById('master-content').innerHTML = html;
         }
 
-        // ==================== FORM SATUAN (TAMBAH/EDIT) ====================
-        function showUnitForm(unitId) {
-            editingUnitId = unitId || null;
-            const isEdit = editingUnitId !== null;
-            const title = isEdit ? 'Edit Satuan' : 'Tambah Satuan';
+        function showAddUnitPage() {
+            editingUnitId = null;
             const html = `
                 <div class="content-card">
                     <h2 class="page-title">
@@ -1771,7 +1773,7 @@
                                 <polyline points="12 19 5 12 12 5"></polyline>
                             </svg>
                         </button>
-                        ${title}
+                        Tambah Satuan
                     </h2>
                     <form id="unit-form" onsubmit="event.preventDefault();">
                         <div class="form-group">
@@ -1790,21 +1792,20 @@
                 </div>
             `;
             document.getElementById('master-content').innerHTML = html;
-            if (isEdit) {
-                const unit = kasirSatuan.find(u => u.id === editingUnitId);
-                if (unit) {
-                    document.getElementById('unit-name').value = unit.name;
-                    document.getElementById('unit-symbol').value = unit.symbol || '';
-                }
-            }
-        }
-
-        function showAddUnitPage() {
-            showUnitForm(null);
         }
 
         function showEditUnitPage(id) {
-            showUnitForm(id);
+            const unit = kasirSatuan.find(u => u.id === id);
+            if (!unit) {
+                navigateTo('listUnits');
+                return;
+            }
+            editingUnitId = id;
+            showAddUnitPage();
+            setTimeout(() => {
+                document.getElementById('unit-name').value = unit.name;
+                document.getElementById('unit-symbol').value = unit.symbol || '';
+            }, 0);
         }
 
         // ==================== FUNGSI SAVE SATUAN (DIPERBAIKI) ====================
@@ -2061,29 +2062,15 @@
             }
         }
 
-        // ==================== FUNGSI ITEM (TAMBAH/EDIT) ====================
-        function showItemForm(itemId) {
-            editingItemId = itemId || null;
-            const isEdit = editingItemId !== null;
-            const title = isEdit ? 'Edit Item' : 'Tambah Item Baru';
-
-            // Set tempUnitConversions
-            if (isEdit) {
-                const item = kasirItems.find(i => i.id === editingItemId);
-                if (item) {
-                    tempUnitConversions = item.unitConversions ? JSON.parse(JSON.stringify(item.unitConversions)) : [];
-                    tempUnitConversions = tempUnitConversions.map((conv, idx) => {
-                        if (!conv.id) conv.id = idx + 1;
-                        return conv;
-                    });
-                } else {
-                    // Jika item tidak ditemukan, kembali ke list
-                    navigateTo('listItems');
-                    return;
-                }
-            } else {
-                tempUnitConversions = [];
-            }
+        // ==================== FUNGSI ITEM (TAMBAH/EDIT) MODIFICATION ====================
+        // MODIFICATION: Tambah dropdown gudang di form tambah item
+        function showAddItemPage() {
+            editingItemId = null;
+            tempUnitConversions = [];
+            // MODIFICATION: Buat opsi dropdown gudang dari warehouses
+            const warehouseOptions = warehouses.map(w => 
+                `<option value="${w.id}">${w.code} - ${w.name}</option>`
+            ).join('');
 
             const html = `
                 <div class="content-card">
@@ -2094,7 +2081,7 @@
                                 <polyline points="12 19 5 12 12 5"></polyline>
                             </svg>
                         </button>
-                        ${title}
+                        Tambah Item Baru
                     </h2>
                     <form id="item-form" onsubmit="event.preventDefault();">
                         <div class="form-group">
@@ -2146,6 +2133,15 @@
                         <div class="form-group">
                             <label>Stok Awal</label>
                             <input type="number" id="kasir-item-stock" class="form-input" min="0" value="0" step="any">
+                        </div>
+                        <!-- MODIFICATION: Tambah dropdown pilih gudang -->
+                        <div class="form-group" id="warehouse-group">
+                            <label for="kasir-item-warehouse">Gudang Awal <span class="text-danger">*</span></label>
+                            <select id="kasir-item-warehouse" class="form-input" required>
+                                <option value="">-- Pilih Gudang --</option>
+                                ${warehouseOptions}
+                            </select>
+                            <small>Pilih gudang untuk menempatkan stok awal</small>
                         </div>
                         <div class="form-group">
                             <label>Stok Minimal</label>
@@ -2199,54 +2195,62 @@
                 </div>
             `;
             document.getElementById('master-content').innerHTML = html;
-
-            // Inisialisasi level harga
             const levelContainer = document.getElementById('level-harga-container');
             levelContainer.innerHTML = '';
-            if (isEdit) {
-                const item = kasirItems.find(i => i.id === editingItemId);
-                if (item && item.priceLevels && item.priceLevels.length > 0) {
+            addLevelRow();
+            renderConversionsList();
+        }
+
+        // MODIFICATION: Saat edit, sembunyikan grup gudang
+        function showEditItemPage(itemId) {
+            const item = kasirItems.find(i => i.id === itemId);
+            if (!item) {
+                showNotification('Item tidak ditemukan', 'error');
+                navigateTo('listItems');
+                return;
+            }
+            editingItemId = itemId;
+            tempUnitConversions = item.unitConversions ? JSON.parse(JSON.stringify(item.unitConversions)) : [];
+            tempUnitConversions = tempUnitConversions.map((conv, idx) => {
+                if (!conv.id) conv.id = idx + 1;
+                return conv;
+            });
+
+            showAddItemPage();
+
+            setTimeout(() => {
+                document.getElementById('kasir-item-name').value = item.name || '';
+                document.getElementById('kasir-item-code').value = item.code || '';
+                document.getElementById('kasir-item-barcode').value = item.barcode || item.code || '';
+                document.getElementById('kasir-item-category').value = item.categoryId || '';
+                document.getElementById('kasir-item-harga-dasar').value = item.hargaDasar || '';
+                document.getElementById('kasir-item-harga-jual').value = item.hargaJual || '';
+                document.getElementById('kasir-item-berat').value = item.berat || '';
+                document.getElementById('kasir-item-satuan').value = item.satuanId || '';
+                document.getElementById('kasir-item-diskon').value = item.diskon || '';
+                document.getElementById('kasir-item-stock').value = item.stock || 0;
+                document.getElementById('kasir-item-min-stock').value = item.minStock || 5;
+                document.getElementById('kasir-item-weighable').checked = item.isWeighable || false;
+                document.getElementById('kasir-item-track-batch').checked = item.track_batch || false;
+                document.getElementById('kasir-item-track-serial').checked = item.track_serial || false;
+
+                // MODIFICATION: Sembunyikan grup gudang karena stok awal tidak bisa diubah saat edit
+                const warehouseGroup = document.getElementById('warehouse-group');
+                if (warehouseGroup) warehouseGroup.style.display = 'none';
+
+                const levelContainer = document.getElementById('level-harga-container');
+                levelContainer.innerHTML = '';
+                if (item.priceLevels && item.priceLevels.length > 0) {
                     item.priceLevels.forEach(l => addLevelRow(l.minQty, l.price));
                 } else {
                     addLevelRow();
                 }
-            } else {
-                addLevelRow();
-            }
 
-            renderConversionsList();
-
-            // Isi data jika edit
-            if (isEdit) {
-                const item = kasirItems.find(i => i.id === editingItemId);
-                if (item) {
-                    document.getElementById('kasir-item-name').value = item.name || '';
-                    document.getElementById('kasir-item-code').value = item.code || '';
-                    document.getElementById('kasir-item-barcode').value = item.barcode || item.code || '';
-                    document.getElementById('kasir-item-category').value = item.categoryId || '';
-                    document.getElementById('kasir-item-harga-dasar').value = item.hargaDasar || '';
-                    document.getElementById('kasir-item-harga-jual').value = item.hargaJual || '';
-                    document.getElementById('kasir-item-berat').value = item.berat || '';
-                    document.getElementById('kasir-item-satuan').value = item.satuanId || '';
-                    document.getElementById('kasir-item-diskon').value = item.diskon || '';
-                    document.getElementById('kasir-item-stock').value = item.stock || 0;
-                    document.getElementById('kasir-item-min-stock').value = item.minStock || 5;
-                    document.getElementById('kasir-item-weighable').checked = item.isWeighable || false;
-                    document.getElementById('kasir-item-track-batch').checked = item.track_batch || false;
-                    document.getElementById('kasir-item-track-serial').checked = item.track_serial || false;
-                }
-            }
+                renderConversionsList();
+            }, 0);
         }
 
-        function showAddItemPage() {
-            showItemForm(null);
-        }
-
-        function showEditItemPage(itemId) {
-            showItemForm(itemId);
-        }
-
-        // ==================== FUNGSI SAVE ITEM (DIPERBAIKI) ====================
+        // ==================== FUNGSI SAVE ITEM (DIPERBAIKI) MODIFICATION ====================
         async function saveKasirItemFromPage() {
             if (editingItemId) {
                 editingItemId = Number(editingItemId);
@@ -2265,6 +2269,13 @@
             const isWeighable = document.getElementById('kasir-item-weighable').checked;
             const track_batch = document.getElementById('kasir-item-track-batch').checked;
             const track_serial = document.getElementById('kasir-item-track-serial').checked;
+
+            // MODIFICATION: Ambil warehouseId jika mode tambah
+            const warehouseId = editingItemId ? null : parseInt(document.getElementById('kasir-item-warehouse')?.value);
+            if (!editingItemId && !warehouseId) {
+                showNotification('Pilih gudang untuk stok awal', 'error');
+                return;
+            }
 
             const priceLevels = getPriceLevelsFromDOM();
 
@@ -2314,7 +2325,39 @@
                         priceLevels, unitConversions,
                         createdAt: now, updatedAt: now
                     };
-                    await dbAdd(STORES.KASIR_ITEMS, newItem);
+                    const newItemId = await dbAdd(STORES.KASIR_ITEMS, newItem);
+                    newItem.id = newItemId;
+                    kasirItems.push(newItem);
+
+                    // MODIFICATION: Tambah stok awal ke gudang yang dipilih jika stok > 0 dan item tidak menggunakan serial
+                    if (!editingItemId && warehouseId && stock > 0) {
+                        try {
+                            if (track_serial) {
+                                showNotification('Item dengan serial number tidak dapat diberi stok awal. Gunakan menu Pembelian.', 'warning');
+                            } else {
+                                // Pastikan fungsi addStock tersedia (dari inventory-core.js)
+                                if (typeof window.addStock === 'function') {
+                                    await window.addStock({
+                                        itemId: newItemId,
+                                        warehouseId: warehouseId,
+                                        quantity: stock,
+                                        batchNumber: 'INITIAL',
+                                        notes: 'Stok awal saat pembuatan item',
+                                        referenceType: 'initial'
+                                    });
+                                    // Refresh data stok jika perlu
+                                    if (typeof window.loadItemStocks === 'function') {
+                                        await window.loadItemStocks();
+                                    }
+                                } else {
+                                    console.warn('addStock tidak tersedia, stok awal tidak tercatat di inventory');
+                                }
+                            }
+                        } catch (stockError) {
+                            console.error('Gagal menambah stok awal:', stockError);
+                            showNotification('Item tersimpan, tetapi stok awal gagal ditambahkan: ' + stockError.message, 'warning');
+                        }
+                    }
                 }
                 await loadKasirItems();
                 showNotification('Item berhasil disimpan', 'success');
@@ -2531,7 +2574,7 @@
             }
         }
 
-        // ==================== INISIALISASI HALAMAN ====================
+        // ==================== INISIALISASI HALAMAN (MODIFICATION) ====================
         async function initMasterPage() {
             try {
                 await initDatabase();
@@ -2539,6 +2582,8 @@
                 await loadKasirItems();
                 await loadKasirSatuan();
                 await loadBundles();
+                // MODIFICATION: Muat data gudang
+                await loadWarehouses();
 
                 const savedUser = sessionStorage.getItem('currentUser');
                 if (savedUser) {
