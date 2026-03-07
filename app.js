@@ -2318,8 +2318,8 @@ async function initWarehouseSelector() {
         return;
     }
 
-    // Hapus event listener lama dengan mengganti elemen (clone)
-    const newSelect = select.cloneNode(false); // clone tanpa children
+    // Hapus event listener lama dengan mengganti elemen
+    const newSelect = select.cloneNode(false);
     select.parentNode.replaceChild(newSelect, select);
 
     // Tampilkan loading
@@ -2332,7 +2332,7 @@ async function initWarehouseSelector() {
         const activeWarehouses = allWarehouses.filter(w => w.isActive !== false);
 
         // Kosongkan dan isi ulang
-        newSelect.innerHTML = '<option value="" disabled selected>-- Pilih Gudang --</option>';
+        newSelect.innerHTML = '<option value="" disabled>-- Pilih Gudang --</option>';
 
         if (activeWarehouses.length === 0) {
             newSelect.innerHTML = '<option value="" disabled>-- Tidak ada gudang aktif --</option>';
@@ -2342,11 +2342,17 @@ async function initWarehouseSelector() {
                 const option = document.createElement('option');
                 option.value = w.id;
                 option.textContent = `${w.code} - ${w.name}`;
-                if (selectedWarehouseId && w.id == selectedWarehouseId) {
-                    option.selected = true;
-                }
                 newSelect.appendChild(option);
             });
+
+            // 🔥 Jika belum ada gudang yang dipilih, pilih gudang pertama secara default
+            if (!selectedWarehouseId) {
+                selectedWarehouseId = activeWarehouses[0].id;
+                sessionStorage.setItem('selectedWarehouseId', selectedWarehouseId);
+            }
+
+            // Set nilai dropdown sesuai selectedWarehouseId
+            newSelect.value = selectedWarehouseId;
             newSelect.disabled = false;
         }
 
@@ -2360,9 +2366,9 @@ async function initWarehouseSelector() {
                     
                     // Muat ulang stok untuk gudang baru
                     await loadItemStocks();
+                    await loadItemBatches();
                     renderProductList();
                     
-                    // Jika halaman cart sedang terbuka, perbarui tampilan (opsional)
                     if (document.getElementById('cart-page')?.style.display === 'block') {
                         renderCartPage();
                     }
@@ -2374,7 +2380,6 @@ async function initWarehouseSelector() {
         };
         newSelect.addEventListener('change', changeHandler);
 
-        // Simpan untuk cleanup
         eventListenersCleanup.push(() => {
             newSelect.removeEventListener('change', changeHandler);
         });
