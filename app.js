@@ -83,7 +83,7 @@ const ALL_MENUS = [
 const icons = {
     edit: `<svg class="icon" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
     delete: `<svg class="icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`,
-    add: `<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y1="12"/></svg>`,
+    add: `<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`,
     upload: `<svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
     download: `<svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`
 };
@@ -2597,7 +2597,8 @@ function processBarcode() {
     
     if (item) {
         const batches = getAvailableBatches(item.id, selectedWarehouseId);
-        if (batches.length > 0) {
+        // 🔥 Hanya tampilkan modal jika item dilacak batch
+        if (item.track_batch && batches.length > 0) {
             showBatchSelectionModal(item, batches);
         } else {
             addToCart(item, 1, null, 0);
@@ -2615,7 +2616,8 @@ function processBarcode() {
             );
             if (conv) {
                 const batches = getAvailableBatches(it.id, selectedWarehouseId);
-                if (batches.length > 0) {
+                // 🔥 Hanya tampilkan modal jika item dilacak batch
+                if (it.track_batch && batches.length > 0) {
                     showBatchSelectionModal(it, batches, conv);
                 } else {
                     addToCart(it, 1, conv, 0);
@@ -2645,7 +2647,8 @@ function processBarcode() {
             if (item) {
                 const qtyKg = weightGram / 1000;
                 const batches = getAvailableBatches(item.id, selectedWarehouseId);
-                if (batches.length > 0) {
+                // 🔥 Hanya tampilkan modal jika item dilacak batch
+                if (item.track_batch && batches.length > 0) {
                     showBatchSelectionModal(item, batches, null, weightGram);
                 } else {
                     addToCart(item, qtyKg, null, weightGram);
@@ -3823,7 +3826,8 @@ function addToCartFromProductWithQty(itemId, element) {
     const item = kasirItems.find(i => i.id === itemId);
     if (item) {
         const batches = getAvailableBatches(item.id, selectedWarehouseId);
-        if (batches.length > 0) {
+        // 🔥 Hanya tampilkan modal jika item dilacak batch
+        if (item.track_batch && batches.length > 0) {
             showBatchSelectionModal(item, batches, null, 0);
         } else {
             addToCart(item, qty, null, 0);
@@ -3943,7 +3947,8 @@ function addToCartWithUnit(itemId, convIndex) {
         if (isNaN(qty) || qty <= 0) qty = 0.01;
     }
     const batches = getAvailableBatches(item.id, selectedWarehouseId);
-    if (batches.length > 0) {
+    // 🔥 Hanya tampilkan modal jika item dilacak batch
+    if (item.track_batch && batches.length > 0) {
         showBatchSelectionModal(item, batches, conv, 0);
     } else {
         addToCart(item, qty, conv, 0);
