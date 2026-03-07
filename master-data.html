@@ -859,11 +859,12 @@
         </div>
     </div>
 
-    <!-- ==================== NOTIFICATION ==================== -->
+    <!-- script==================== NOTIFICATION ==================== -->
     <div id="notification"></div>
 
     <!-- ==================== SCRIPT TAMBAHAN ==================== -->
     <!-- Memuat script inventori dan gudang (opsional, fallback jika ada) -->
+    <script src="app.js" onerror="console.warn('app.js tidak ditemukan, fitur gudang terbatas')"></script>
     <script src="inventory-core.js" onerror="console.warn('inventory-core.js tidak ditemukan, fitur inventori terbatas')"></script>
     <script src="warehouse.js" onerror="console.warn('warehouse.js tidak ditemukan, fitur gudang terbatas')"></script>
 
