@@ -2263,7 +2263,7 @@ async function addBundleToCart(bundleId) {
 
 // ==================== FUNGSI TRANSAKSI KASIR (BUG FIX #1) ====================
 // BUG FIX #1: Perbaiki urutan inisialisasi warehouse selector
-function openTransaksiPage() {
+async function openTransaksiPage() {
     const mainContent = document.querySelector('.main-content');
     const transaksiPage = document.getElementById('transaksi-page');
     const cartPage = document.getElementById('cart-page');
@@ -2274,8 +2274,8 @@ function openTransaksiPage() {
     if (cartPage) cartPage.style.display = 'none';
     if (paymentPage) paymentPage.style.display = 'none';
     
-    // Inisialisasi dropdown gudang (langsung dari DB)
-    initWarehouseSelector();
+    // Inisialisasi dropdown gudang (async)
+    await initWarehouseSelector();
     
     // Set selectedWarehouseId dari sessionStorage jika ada
     try {
@@ -2284,6 +2284,10 @@ function openTransaksiPage() {
             selectedWarehouseId = parseInt(savedId);
         }
     } catch (e) {}
+    
+    // 🔥 MUAT ULANG STOK UNTUK WAREHOUSE TERPILIH
+    await loadItemStocks();
+    await loadItemBatches();
     
     currentFilteredItems = [...kasirItems];
     renderProductList(currentFilteredItems);
